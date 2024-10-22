@@ -19,7 +19,6 @@ float player_y = 100.0f;
 const float jump_velocity_x = -600.0f;
 
 const float pipe_velocity_x = -200.0f;
-float pipe_x = 500.0f;
 
 const float pipe_width = 100.0f;
 const float pipe_gap = 200.0f;
