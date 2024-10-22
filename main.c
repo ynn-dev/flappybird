@@ -108,6 +108,7 @@ void action() {
         Mix_PlayChannel(-1, sfx_wing, 0);
         player_velocity_y = jump_velocity_x;
     } else {
+        Mix_PlayChannel(-1, sfx_swooshing, 0);
         reset();
     }
 }
@@ -357,37 +358,37 @@ void render() {
 
     if (score < 10) {
         rect.x = (window_width / 2) - ((SPRITE_NUMBERS[score].w * SPRITE_SCALE) / 2);
-        rect.y = 100;
+        rect.y = 200;
         rect.w = SPRITE_NUMBERS[score].w * SPRITE_SCALE;
         rect.h = SPRITE_NUMBERS[score].h * SPRITE_SCALE;
         SDL_RenderCopyF(renderer, texture, &SPRITE_NUMBERS[score], &rect);
     } else if (score < 100) {
         rect.x = (window_width / 2) - ((SPRITE_NUMBERS[score / 10 % 10].w * SPRITE_SCALE) / 2) - (SPRITE_NUMBERS[score / 10 % 10].w * SPRITE_SCALE) / 1.9f;
-        rect.y = 100;
+        rect.y = 200;
         rect.w = SPRITE_NUMBERS[score / 10 % 10].w * SPRITE_SCALE;
         rect.h = SPRITE_NUMBERS[score / 10 % 10].h * SPRITE_SCALE;
         SDL_RenderCopyF(renderer, texture, &SPRITE_NUMBERS[score / 10 % 10], &rect);
 
         rect.x = (window_width / 2) - ((SPRITE_NUMBERS[score % 10].w * SPRITE_SCALE) / 2) + (SPRITE_NUMBERS[score % 10].w * SPRITE_SCALE) / 1.9f;
-        rect.y = 100;
+        rect.y = 200;
         rect.w = SPRITE_NUMBERS[score % 10].w * SPRITE_SCALE;
         rect.h = SPRITE_NUMBERS[score % 10].h * SPRITE_SCALE;
         SDL_RenderCopyF(renderer, texture, &SPRITE_NUMBERS[score % 10], &rect);
     } else if (score < 1000) {
         rect.x = (window_width / 2) - ((SPRITE_NUMBERS[score / 100].w * SPRITE_SCALE) / 2) - 1.1f * (SPRITE_NUMBERS[score / 100].w * SPRITE_SCALE);
-        rect.y = 100;
+        rect.y = 200;
         rect.w = SPRITE_NUMBERS[score / 100].w * SPRITE_SCALE;
         rect.h = SPRITE_NUMBERS[score / 100].h * SPRITE_SCALE;
         SDL_RenderCopyF(renderer, texture, &SPRITE_NUMBERS[score / 100], &rect);
 
         rect.x = (window_width / 2) - ((SPRITE_NUMBERS[score / 10 % 10].w * SPRITE_SCALE) / 2);
-        rect.y = 100;
+        rect.y = 200;
         rect.w = SPRITE_NUMBERS[score / 10 % 10].w * SPRITE_SCALE;
         rect.h = SPRITE_NUMBERS[score / 10 % 10].h * SPRITE_SCALE;
         SDL_RenderCopyF(renderer, texture, &SPRITE_NUMBERS[score / 10 % 10], &rect);
 
         rect.x = (window_width / 2) - ((SPRITE_NUMBERS[score % 10].w * SPRITE_SCALE) / 2) + 1.1f * (SPRITE_NUMBERS[score % 10].w * SPRITE_SCALE);
-        rect.y = 100;
+        rect.y = 200;
         rect.w = SPRITE_NUMBERS[score % 10].w * SPRITE_SCALE;
         rect.h = SPRITE_NUMBERS[score % 10].h * SPRITE_SCALE;
         SDL_RenderCopyF(renderer, texture, &SPRITE_NUMBERS[score % 10], &rect);
