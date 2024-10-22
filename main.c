@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <SDL_image.h>
 #include <time.h>
 
 const int   window_width_initial = 1170 * 0.5;
@@ -209,7 +210,6 @@ void render() {
     }
 
     get_player_rect(&rect);
-
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderFillRectF(renderer, &rect);
 
@@ -259,17 +259,27 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if (SDL_GetRendererOutputSize(renderer, &window_width, &window_height) != 0) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), window);
+    SDL_Texture *texture = IMG_LoadTexture(renderer, "spritesheet.png");
+    if (texture == NULL) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", IMG_GetError(), window);
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         return 1;
     }
 
-    printf("width = %d, height = %d\n", window_width, window_height);    
+    if (SDL_GetRendererOutputSize(renderer, &window_width, &window_height) != 0) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), window);
+        SDL_DestroyTexture(texture);
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        return 1;
+    }
+
+    printf("width = %d, height = %d\n", window_width, window_height);
 
     run();
 
+    SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();

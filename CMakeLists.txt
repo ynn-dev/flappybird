@@ -15,6 +15,8 @@ else()
 
     # 1. Look for a SDL2 package, 2. Look for the SDL2maincomponent and 3. DO NOT fail when SDL2main is not available
     find_package(SDL2 REQUIRED CONFIG COMPONENTS SDL2main)
+
+    find_package(SDL2_image REQUIRED CONFIG COMPONENTS SDL2_image)
 endif()
 
 # Create your game executable target as usual
@@ -22,11 +24,12 @@ add_executable(flappybird main.c)
 
 set_property(TARGET flappybird PROPERTY COMPILE_WARNING_AS_ERROR ON)
 
-target_include_directories(flappybird PRIVATE ${SDL2_INCLUDE_DIRS} ${SDL2_mixer_INCLUDE_DIRS})
+target_include_directories(flappybird PRIVATE ${SDL2_INCLUDE_DIRS} ${SDL2_mixer_INCLUDE_DIRS} ${SDL2_image_INCLUDE_DIRS})
 
 message(STATUS "SDL2_INCLUDE_DIRS: ${SDL2_INCLUDE_DIRS}")
 message(STATUS "SDL2_LIBRARIES: ${SDL2_LIBRARIES}")
 message(STATUS "SDL2_MIXER_INCLUDE_DIRS: ${SDL2_MIXER_INCLUDE_DIRS}")
+message(STATUS "SDL2_IMAGE_INCLUDE_DIRS: ${SDL2_IMAGE_INCLUDE_DIRS}")
 
 # SDL2::SDL2main may or may not be available. It is e.g. required by Windows GUI applications
 if(TARGET SDL2::SDL2main)
@@ -35,4 +38,4 @@ if(TARGET SDL2::SDL2main)
 endif()
 
 # Link to the actual SDL2 library. SDL2::SDL2 is the shared SDL library, SDL2::SDL2-static is the static SDL libarary.
-target_link_libraries(flappybird PRIVATE SDL2::SDL2)
+target_link_libraries(flappybird PRIVATE SDL2::SDL2 SDL2_image::SDL2_image)
