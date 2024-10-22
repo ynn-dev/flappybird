@@ -30,25 +30,25 @@ const SDL_Rect SPRITE_GROUND      = { .x = 215, .y = 10,  .w = 12,  .h = 56  };
 const SDL_Rect SPRITE_PIPE        = { .x = 152, .y = 3,   .w = 26,  .h = 147 };
 const SDL_Rect SPRITE_PIPE_TOP    = { .x = 152, .y = 163, .w = 26,  .h = 13  };
 const SDL_Rect SPRITE_PIPE_BOTTOM = { .x = 106, .y = 16,  .w = 26,  .h = 13  };
-
 const SDL_Rect SPRITE_PLAYERS[3] = {
-    { .x = 381, .y = 187, .w = 17,  .h = 12  },
-    { .x = 381, .y = 213, .w = 17,  .h = 12  },
-    { .x = 381, .y = 239, .w = 17,  .h = 12  },
+    { .x = 381, .y = 187, .w = 17, .h = 12  },
+    { .x = 381, .y = 213, .w = 17, .h = 12  },
+    { .x = 381, .y = 239, .w = 17, .h = 12  },
 };
 
-int window_width = 0;
+int window_width  = 0;
 int window_height = 0;
 
 float ground_offset = 0;
 #define GROUND_WIDTH (SPRITE_GROUND.w * SPRITE_SCALE)
 
-SDL_Window* window;
-SDL_Renderer* renderer;
-SDL_Texture *texture;
-SDL_Event event;
-int running;
-int game_over;
+SDL_Window   *window;
+SDL_Renderer *renderer;
+SDL_Texture  *texture;
+SDL_Event     event;
+
+int      running;
+int      game_over;
 uint64_t ticks;
 
 float player_y;
@@ -119,6 +119,13 @@ int get_gap_y() {
     int range = max_x - min_x;
 
     return (rand() % range) + min_x;
+}
+
+void get_background_rect(SDL_FRect *rect) {
+    rect->x = 0;
+    rect->y = 0;
+    rect->w = window_width;
+    rect->h = window_height;
 }
 
 void get_pipe_top_rect(int i, SDL_FRect *rect) {
@@ -202,12 +209,16 @@ void update(float dt) {
     player_y += player_velocity_y * dt;
     player_sprite = &SPRITE_PLAYERS[ticks % 300 / 100];
 
-    // collision detection
-
+    // Collision detection
     SDL_FRect a;
     SDL_FRect b;
 
     get_player_rect(&a);
+
+    get_top_rect(&b);
+    if (SDL_HasIntersectionF(&a, &b)) {
+        game_over = 1;
+    }
 
     get_bottom_rect(&b);
     if (SDL_HasIntersectionF(&a, &b)) {
@@ -233,11 +244,7 @@ void render() {
 
     SDL_FRect rect;
 
-    rect.x = 0;
-    rect.y = 0;
-    rect.w = window_width;
-    rect.h = window_height;
-
+    get_background_rect(&rect);
     SDL_RenderCopyF(renderer, texture, &SPRITE_BACKGROUND, &rect);
 
     for (int i = 0; ; i++) {
@@ -259,11 +266,7 @@ void render() {
     }
 
     get_player_rect(&rect);
-    // SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-
     SDL_RenderCopyF(renderer, texture, player_sprite, &rect);
-
-    // SDL_RenderFillRectF(renderer, &rect);
 
     SDL_RenderPresent(renderer);
 }
