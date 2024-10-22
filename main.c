@@ -8,8 +8,8 @@ const float player_width = 75.0f;
 const float player_height = 75.0f;
 const float player_y_initial = 100.0f;
 const float player_velocity_y_initial = 0.0f;
-const float gravity = 2000.0f;
-const float jump_velocity_x = -1000.0f;
+const float GRAVITY = 2300.0f;
+const float jump_velocity_x = -1100.0f;
 const float pipe_velocity_x = -400.0f;
 const float pipe_width = 156.0f;
 const float pipe_gap = 400.0f;
@@ -17,23 +17,29 @@ const float pipe_spacing = 500.0f;
 const float pipe_gap_padding_top = 100.0f;
 const float pipe_gap_padding_bottom = 100.0f;
 
+const float SPRITE_SCALE = 6.0f;
+
 #if defined(__IPHONEOS__)
 const Uint32 WINDOW_FLAGS = SDL_WINDOW_BORDERLESS | SDL_WINDOW_ALLOW_HIGHDPI;
 #else
 const Uint32 WINDOW_FLAGS = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
 #endif
 
-const SDL_Rect SPRITE_BACKGROUND  = {3,   0,   144, 256};
-const SDL_Rect SPRITE_GROUND      = {215, 10,  168, 56};
-const SDL_Rect SPRITE_PIPE        = {152, 3,   26,  147};
-const SDL_Rect SPRITE_PIPE_TOP    = {152, 163, 26,  13};
-const SDL_Rect SPRITE_PIPE_BOTTOM = {106, 16,  26,  13};
-const SDL_Rect SPRITE_PLAYER_1    = {381, 187, 17,  12};
-const SDL_Rect SPRITE_PLAYER_2    = {381, 213, 17,  12};
-const SDL_Rect SPRITE_PLAYER_3    = {381, 239, 17,  12};
+// x, y, w, h
+const SDL_Rect SPRITE_BACKGROUND  = { .x = 3,   .y = 0,   .w = 144, .h = 256 };
+const SDL_Rect SPRITE_GROUND      = { .x = 215, .y = 10,  .w = 12,  .h = 56  };
+const SDL_Rect SPRITE_PIPE        = { .x = 152, .y = 3,   .w = 26,  .h = 147 };
+const SDL_Rect SPRITE_PIPE_TOP    = { .x = 152, .y = 163, .w = 26,  .h = 13  };
+const SDL_Rect SPRITE_PIPE_BOTTOM = { .x = 106, .y = 16,  .w = 26,  .h = 13  };
+const SDL_Rect SPRITE_PLAYER_1    = { .x = 381, .y = 187, .w = 17,  .h = 12  };
+const SDL_Rect SPRITE_PLAYER_2    = { .x = 381, .y = 213, .w = 17,  .h = 12  };
+const SDL_Rect SPRITE_PLAYER_3    = { .x = 381, .y = 239, .w = 17,  .h = 12  };
 
 int window_width = 0;
 int window_height = 0;
+
+float ground_offset = 0;
+#define GROUND_WIDTH (SPRITE_GROUND.w * SPRITE_SCALE)
 
 SDL_Window* window;
 SDL_Renderer* renderer;
@@ -126,10 +132,10 @@ void get_pipe_bottom_rect(int i, SDL_FRect *rect) {
 }
 
 void get_player_rect(SDL_FRect *rect) {
-    rect->x = 100;
+    rect->x = (window_width / 5);
     rect->y = player_y;
-    rect->w = 17 * 6;
-    rect->h = 12 * 6;
+    rect->w = 17 * SPRITE_SCALE;
+    rect->h = 12 * SPRITE_SCALE;
 }
 
 void get_top_rect(SDL_FRect *rect) {
@@ -146,10 +152,20 @@ void get_bottom_rect(SDL_FRect *rect) {
     rect->h = (window_height / 8.0f) * 1;
 }
 
+void get_ground_segment_rect(float x, SDL_FRect *rect) {
+    rect->x = x;
+    rect->y = (window_height / 8.0f) * 7;
+    rect->w = GROUND_WIDTH;
+    rect->h = (window_height / 8.0f) * 1;
+}
+
 void update(float dt) {
     if (game_over) {
         return;
     }
+
+    ground_offset += pipe_velocity_x * dt;
+    ground_offset = fmodf(ground_offset, SPRITE_GROUND.w * SPRITE_SCALE);
 
     // If there are no pipes, create a pipe
     if (pipes_len == 0) {
@@ -178,7 +194,7 @@ void update(float dt) {
         pipes[i].x += pipe_velocity_x * dt;
     }
 
-    player_velocity_y += gravity * dt;
+    player_velocity_y += GRAVITY * dt;
     player_y += player_velocity_y * dt;
 
     // collision detection
@@ -219,12 +235,15 @@ void render() {
 
     SDL_RenderCopyF(renderer, texture, &SPRITE_BACKGROUND, &rect);
 
-    rect.x = 0;
-    rect.y = (window_height / 8.0f) * 7;
-    rect.w = window_width;
-    rect.h = (window_height / 8.0f) * 1;
+    for (int i = 0; ; i++) {
+        int ground_x = ground_offset + GROUND_WIDTH * i;
+        if (ground_x > window_width) {
+            break;
+        }
 
-    SDL_RenderCopyF(renderer, texture, &SPRITE_GROUND, &rect);
+        get_ground_segment_rect(ground_x, &rect);
+        SDL_RenderCopyF(renderer, texture, &SPRITE_GROUND, &rect);
+    }
 
     for (int i = 0; i < pipes_len; i++) {
         get_pipe_top_rect(i, &rect);
