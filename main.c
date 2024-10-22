@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <time.h>
 
 #define WINDOW_WIDTH 585 * 0.6
 #define WINDOW_HEIGHT 1266 * 0.6
@@ -16,6 +17,17 @@ const float jump_velocity_x = -600.0f;
 
 const float pipe_velocity_x = -100.0f;
 float pipe_x = 500.0f;
+
+const float pipe_width = 100.0f;
+const float pipe_gap = 200.0f;
+
+typedef struct pipe {
+    float x;
+    float gap_y;
+} pipe;
+
+pipe pipes[10];
+int pipes_len = 0;
 
 void processEvents() {
     while (SDL_PollEvent(&event)) {
@@ -46,7 +58,15 @@ void processEvents() {
 }
 
 void update(float dt) {
-    pipe_x += pipe_velocity_x * dt;
+    if (pipes_len == 0) {
+        pipes[0].x = 800;
+        pipes[0].gap_y = rand() % 500;
+        pipes_len++;
+    }
+
+    for (int i = 0; i < pipes_len; i++) {
+        pipes[i].x += pipe_velocity_x * dt;
+    }
 
     player_velocity_y += gravity * dt;
     player_y += player_velocity_y * dt;
@@ -56,25 +76,25 @@ void render() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    SDL_FRect pipe = {
-        .x = pipe_x,
-        .y = 0,
-        .w = 100,
-        .h = 400,
-    };
+    for (int i = 0; i < pipes_len; i++) {
+        SDL_FRect rect;
+        
+        rect.x = pipes[i].x;
+        rect.y = 0;
+        rect.w = pipe_width;
+        rect.h = pipes[i].gap_y;
 
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderFillRectF(renderer, &pipe);
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderFillRectF(renderer, &rect);
 
-    SDL_FRect pipe2 = {
-        .x = pipe_x,
-        .y = 700,
-        .w = 100,
-        .h = 300,
-    };
+        rect.x = pipes[i].x;
+        rect.y = pipes[i].gap_y + pipe_gap;
+        rect.w = pipe_width;
+        rect.h = pipes[i].gap_y + pipe_gap + 1000;
 
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderFillRectF(renderer, &pipe2);
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderFillRectF(renderer, &rect);
+    }
 
     SDL_FRect rect = {
         .x = 100,
@@ -111,6 +131,8 @@ void run() {
 }
 
 int main(int argc, char *argv[]) {
+    srand(time(NULL));
+
     if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) < 0) {
         fprintf(stderr, "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
         return 1;
