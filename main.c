@@ -21,7 +21,7 @@ const float jump_velocity_x = -600.0f;
 const float pipe_velocity_x = -200.0f;
 
 const float pipe_width = 100.0f;
-const float pipe_gap = 200.0f;
+const float pipe_gap = 300.0f;
 const float pipe_spacing = 300.0f;
 
 const float pipe_gap_padding_top = 100.0f;
@@ -32,7 +32,8 @@ typedef struct pipe {
     float gap_y;
 } pipe;
 
-pipe pipes[10];
+const int max_pipes = 10;
+pipe pipes[max_pipes];
 int pipes_len = 0;
 
 void processEvents() {
@@ -57,6 +58,12 @@ void processEvents() {
                         break;
                 }
                 break;
+            case SDL_MOUSEBUTTONDOWN:
+                player_velocity_y = jump_velocity_x;
+                break;
+            // case SDL_WINDOWEVENT:
+            //     SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
+            //     break;
             default:
                 break;
         }
@@ -65,23 +72,22 @@ void processEvents() {
 
 int get_gap_y() {
     int min_x = pipe_gap_padding_top;
-    int max_x = window_height - pipe_gap_padding_bottom;
+    int max_x = window_height - pipe_gap - pipe_gap_padding_bottom;
+    int range = max_x - min_x;
 
-    return (rand() % (max_x - min_x)) + min_x;
+    return (rand() % range) + min_x;
 }
 
 void update(float dt) {
     // If there are no pipes, create a pipe
     if (pipes_len == 0) {
-        printf("no pipes, creating one\n");
         pipes[0].x = window_width;
         pipes[0].gap_y = get_gap_y();
         pipes_len++;
     }
 
     // If the last pipe is futher away than pipe_spacing, create a new one
-    if (pipes[pipes_len - 1].x < window_width - pipe_spacing) {
-        printf("adding new pipe\n");
+    if (pipes_len < max_pipes && pipes[pipes_len - 1].x < window_width - pipe_spacing) {
         pipes[pipes_len].x = window_width;
         pipes[pipes_len].gap_y = get_gap_y();
         pipes_len++; 
@@ -89,7 +95,6 @@ void update(float dt) {
 
     // Remove pipes than the player has passed
     while (pipes[0].x + pipe_width < 0) {
-        printf("removing pipe\n");
         // Move pipes down in the array
         for (int i = 0; i < pipes_len - 1; i++) {
             pipes[i] = pipes[i + 1];
@@ -109,9 +114,9 @@ void render() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
+    SDL_FRect rect;
+
     for (int i = 0; i < pipes_len; i++) {
-        SDL_FRect rect;
-        
         rect.x = pipes[i].x;
         rect.y = 0;
         rect.w = pipe_width;
@@ -129,12 +134,10 @@ void render() {
         SDL_RenderFillRectF(renderer, &rect);
     }
 
-    SDL_FRect rect = {
-        .x = 100,
-        .y = player_y,
-        .w = 75,
-        .h = 75, 
-    };
+    rect.x = 100;
+    rect.y = player_y;
+    rect.w = 75;
+    rect.h = 75; 
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderFillRectF(renderer, &rect);
