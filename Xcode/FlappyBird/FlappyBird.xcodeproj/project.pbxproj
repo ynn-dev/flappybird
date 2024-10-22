@@ -15,6 +15,8 @@
 		FA2B5F412CC861330060DA75 /* sfx_wing.wav in Resources */ = {isa = PBXBuildFile; fileRef = FA2B5F3E2CC861330060DA75 /* sfx_wing.wav */; };
 		FA2B5F422CC861330060DA75 /* sfx_swooshing.wav in Resources */ = {isa = PBXBuildFile; fileRef = FA2B5F3D2CC861330060DA75 /* sfx_swooshing.wav */; };
 		FA2B5F432CC861330060DA75 /* sfx_point.wav in Resources */ = {isa = PBXBuildFile; fileRef = FA2B5F3C2CC861330060DA75 /* sfx_point.wav */; };
+		FA2B5F5F2CC865FB0060DA75 /* SDL2_mixer.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FA2B5F522CC865C30060DA75 /* SDL2_mixer.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		FA2B5F612CC868E40060DA75 /* SDL2_mixer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA2B5F522CC865C30060DA75 /* SDL2_mixer.framework */; };
 		FA9C8B2A2CC7E1C200B46CC7 /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA9C8B152CC7E13E00B46CC7 /* SDL2.framework */; };
 		FA9C8B2B2CC7E1C200B46CC7 /* SDL2.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FA9C8B152CC7E13E00B46CC7 /* SDL2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		FA9C8B322CC7E2EE00B46CC7 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = FA9C8B312CC7E2EE00B46CC7 /* main.c */; };
@@ -26,6 +28,13 @@
 			containerPortal = FA2B5F142CC819B90060DA75 /* SDL_image.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = BE1FA72E07AF4C45004B6283;
+			remoteInfo = Framework;
+		};
+		FA2B5F512CC865C30060DA75 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FA2B5F442CC865C30060DA75 /* SDL_mixer.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = BE1FA90607AF96B2004B6283;
 			remoteInfo = Framework;
 		};
 		FA9C8B142CC7E13E00B46CC7 /* PBXContainerItemProxy */ = {
@@ -44,6 +53,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				FA2B5F5F2CC865FB0060DA75 /* SDL2_mixer.framework in Embed Frameworks */,
 				FA9C8B2B2CC7E1C200B46CC7 /* SDL2.framework in Embed Frameworks */,
 				FA2B5F2D2CC81A020060DA75 /* SDL2_image.framework in Embed Frameworks */,
 			);
@@ -60,6 +70,7 @@
 		FA2B5F3C2CC861330060DA75 /* sfx_point.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = sfx_point.wav; path = /Users/alex/development/flappybird/sfx_point.wav; sourceTree = "<absolute>"; };
 		FA2B5F3D2CC861330060DA75 /* sfx_swooshing.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = sfx_swooshing.wav; path = /Users/alex/development/flappybird/sfx_swooshing.wav; sourceTree = "<absolute>"; };
 		FA2B5F3E2CC861330060DA75 /* sfx_wing.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = sfx_wing.wav; path = /Users/alex/development/flappybird/sfx_wing.wav; sourceTree = "<absolute>"; };
+		FA2B5F442CC865C30060DA75 /* SDL_mixer.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SDL_mixer.xcodeproj; path = /Users/alex/development/flappybird/deps/SDL_mixer/Xcode/SDL_mixer.xcodeproj; sourceTree = "<absolute>"; };
 		FA9C8AE42CC7E07800B46CC7 /* FlappyBird.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FlappyBird.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FA9C8B022CC7E13D00B46CC7 /* SDL.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SDL.xcodeproj; path = /Users/alex/development/SDL/Xcode/SDL/SDL.xcodeproj; sourceTree = "<absolute>"; };
 		FA9C8B312CC7E2EE00B46CC7 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = main.c; path = ../../main.c; sourceTree = "<group>"; };
@@ -80,6 +91,7 @@
 			files = (
 				FA9C8B2A2CC7E1C200B46CC7 /* SDL2.framework in Frameworks */,
 				FA2B5F2C2CC81A020060DA75 /* SDL2_image.framework in Frameworks */,
+				FA2B5F612CC868E40060DA75 /* SDL2_mixer.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -94,9 +106,18 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		FA2B5F4C2CC865C30060DA75 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FA2B5F522CC865C30060DA75 /* SDL2_mixer.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		FA9C8ADB2CC7E07800B46CC7 = {
 			isa = PBXGroup;
 			children = (
+				FA2B5F442CC865C30060DA75 /* SDL_mixer.xcodeproj */,
 				FA2B5F3A2CC861330060DA75 /* sfx_die.wav */,
 				FA2B5F3B2CC861330060DA75 /* sfx_hit.wav */,
 				FA2B5F3C2CC861330060DA75 /* sfx_point.wav */,
@@ -196,6 +217,10 @@
 					ProductGroup = FA2B5F1A2CC819B90060DA75 /* Products */;
 					ProjectRef = FA2B5F142CC819B90060DA75 /* SDL_image.xcodeproj */;
 				},
+				{
+					ProductGroup = FA2B5F4C2CC865C30060DA75 /* Products */;
+					ProjectRef = FA2B5F442CC865C30060DA75 /* SDL_mixer.xcodeproj */;
+				},
 			);
 			projectRoot = "";
 			targets = (
@@ -210,6 +235,13 @@
 			fileType = wrapper.framework;
 			path = SDL2_image.framework;
 			remoteRef = FA2B5F1F2CC819B90060DA75 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		FA2B5F522CC865C30060DA75 /* SDL2_mixer.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = SDL2_mixer.framework;
+			remoteRef = FA2B5F512CC865C30060DA75 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		FA9C8B152CC7E13E00B46CC7 /* SDL2.framework */ = {
@@ -377,6 +409,7 @@
 				HEADER_SEARCH_PATHS = (
 					"\"$(SRCROOT)/../../../SDL/include\"",
 					"\"$(SRCROOT)/../../../SDL_image/include\"",
+					"\"$(SRCROOT)/../../deps/SDL_mixer/include\"",
 				);
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -409,6 +442,7 @@
 				HEADER_SEARCH_PATHS = (
 					"\"$(SRCROOT)/../../../SDL/include\"",
 					"\"$(SRCROOT)/../../../SDL_image/include\"",
+					"\"$(SRCROOT)/../../deps/SDL_mixer/include\"",
 				);
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;

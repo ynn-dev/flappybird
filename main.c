@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL_image.h>
+#include <SDL_mixer.h>
 #include <time.h>
 
 #if defined(__IPHONEOS__)
@@ -64,6 +65,13 @@ float ground_offset = 0;
 SDL_Window   *window;
 SDL_Renderer *renderer;
 SDL_Texture  *texture;
+
+Mix_Chunk *sfx_die;
+Mix_Chunk *sfx_hit;
+Mix_Chunk *sfx_point;
+Mix_Chunk *sfx_swooshing;
+Mix_Chunk *sfx_wing;
+
 SDL_Event     event;
 
 int      running;
@@ -97,10 +105,16 @@ void reset() {
 
 void action() {
     if (!game_over) {
+        Mix_PlayChannel(-1, sfx_wing, 0);
         player_velocity_y = jump_velocity_x;
     } else {
         reset();
     }
+}
+
+void do_game_over() {
+    Mix_PlayChannel(-1, sfx_hit, 0);
+    game_over = 1;
 }
 
 void processEvents() {
@@ -257,32 +271,33 @@ void update(float dt) {
 
     get_top_rect(&b);
     if (SDL_HasIntersectionF(&a, &b)) {
-        game_over = 1;
+        do_game_over();
         return;
     }
 
     get_bottom_rect(&b);
     if (SDL_HasIntersectionF(&a, &b)) {
-        game_over = 1;
+        do_game_over();
         return;
     }
 
     for (int i = 0; i < pipes_len; i++) {
         get_pipe_top_rect(i, &b);
         if (SDL_HasIntersectionF(&a, &b)) {
-            game_over = 1;
+            do_game_over();
             return;
         }
 
         get_pipe_bottom_rect(i, &b);
         if (SDL_HasIntersectionF(&a, &b)) {
-            game_over = 1;
+            do_game_over();
             return;
         }
     }
 #endif // COLLISION_DETECTION
 
     if (PLAYER_X > pipes[pipe_to_pass].x + (PIPE_WIDTH / 2)) {
+        Mix_PlayChannel(-1, sfx_point, 0);
         score++;
         pipe_to_pass++;
     }
@@ -388,6 +403,8 @@ void run() {
 
     reset();
 
+    Mix_PlayChannel(-1, sfx_swooshing, 0);
+
     while (running) {
         ticks     = SDL_GetTicks64();
         float dt  = (ticks - lastTicks) / 1000.0f;
@@ -406,8 +423,18 @@ void run() {
 int main(int argc, char *argv[]) {
     srand(time(NULL));
 
-    if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) < 0) {
+    if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
         fprintf(stderr, "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", IMG_GetError(), window);
+        return 1;
+    }
+
+    if (Mix_Init(0) != 0) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", Mix_GetError(), window);
         return 1;
     }
 
@@ -432,6 +459,43 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) != 0) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", Mix_GetError(), window);
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        return 1;
+    }
+
+    sfx_die = Mix_LoadWAV("sfx_die.wav");
+    if (!(sfx_die)) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", Mix_GetError(), window);
+        return 1;
+    }
+
+    sfx_hit = Mix_LoadWAV("sfx_hit.wav");
+    if (!sfx_hit) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", Mix_GetError(), window);
+        return 1;
+    }
+
+    sfx_point = Mix_LoadWAV("sfx_point.wav");
+    if (!sfx_point) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", Mix_GetError(), window);
+        return 1;
+    }
+
+    sfx_swooshing = Mix_LoadWAV("sfx_swooshing.wav");
+    if (!sfx_swooshing) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", Mix_GetError(), window);
+        return 1;
+    }
+
+    sfx_wing = Mix_LoadWAV("sfx_wing.wav");
+    if (!sfx_wing) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", Mix_GetError(), window);
+        return 1;
+    }
+
     if (SDL_GetRendererOutputSize(renderer, &window_width, &window_height) != 0) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), window);
         SDL_DestroyTexture(texture);
@@ -444,9 +508,13 @@ int main(int argc, char *argv[]) {
 
     run();
 
+    Mix_CloseAudio();
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+
+    Mix_Quit();
+    IMG_Quit();
     SDL_Quit();
 
     return 0;
