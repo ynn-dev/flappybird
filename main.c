@@ -16,11 +16,18 @@ const float pipe_spacing = 500.0f;
 const float pipe_gap_padding_top = 100.0f;
 const float pipe_gap_padding_bottom = 100.0f;
 
+#if defined(__IPHONEOS__)
+const Uint32 window_flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_ALLOW_HIGHDPI;
+#else
+const Uint32 window_flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+#endif
+
 int window_width = 0;
 int window_height = 0;
 
 SDL_Window* window;
 SDL_Renderer* renderer;
+SDL_Texture *texture;
 SDL_Event event;
 int running;
 int game_over;
@@ -246,7 +253,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    window = SDL_CreateWindow("Flappy Bird", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_width_initial, window_height_initial, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    window = SDL_CreateWindow("Flappy Bird", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_width_initial, window_height_initial, window_flags);
     if (!window) {
         fprintf(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
         return 1;
@@ -259,7 +266,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    SDL_Texture *texture = IMG_LoadTexture(renderer, "spritesheet.png");
+    texture = IMG_LoadTexture(renderer, "spritesheet.png");
     if (texture == NULL) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", IMG_GetError(), window);
         SDL_DestroyRenderer(renderer);
