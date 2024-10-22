@@ -65,7 +65,6 @@ void processEvents() {
 }
 
 int get_gap_y() {
-
     int min_x = pipe_gap_padding_top;
     int max_x = window_height - pipe_gap_padding_bottom;
 
@@ -145,15 +144,14 @@ void render() {
 }
 
 void run() {
-    running = 1;
-    Uint64 lastTime = SDL_GetTicks64();
-
-    uint64_t frames = 0;
+    running           = 1;
+    uint64_t lastTime = SDL_GetTicks64();
+    uint64_t frames   = 0;
 
     while (running) {
-        Uint64 startTime = SDL_GetTicks64();
-        float dt         = (startTime - lastTime) / 1000.0f;
-        lastTime         = startTime;
+        uint64_t startTime = SDL_GetTicks64();
+        float dt           = (startTime - lastTime) / 1000.0f;
+        lastTime           = startTime;
 
         processEvents();
         update(dt);
