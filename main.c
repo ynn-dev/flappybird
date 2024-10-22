@@ -11,7 +11,7 @@ const float player_velocity_y_initial = 0.0f;
 const float GRAVITY = 2300.0f;
 const float jump_velocity_x = -1100.0f;
 const float pipe_velocity_x = -400.0f;
-const float pipe_width = 156.0f;
+
 const float pipe_gap = 400.0f;
 const float pipe_spacing = 500.0f;
 const float pipe_gap_padding_top = 100.0f;
@@ -28,8 +28,8 @@ const Uint32 WINDOW_FLAGS = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
 const SDL_Rect SPRITE_BACKGROUND  = { .x = 3,   .y = 0,   .w = 144, .h = 256 };
 const SDL_Rect SPRITE_GROUND      = { .x = 215, .y = 10,  .w = 12,  .h = 56  };
 const SDL_Rect SPRITE_PIPE        = { .x = 152, .y = 3,   .w = 26,  .h = 147 };
-const SDL_Rect SPRITE_PIPE_TOP    = { .x = 152, .y = 163, .w = 26,  .h = 13  };
-const SDL_Rect SPRITE_PIPE_BOTTOM = { .x = 106, .y = 16,  .w = 26,  .h = 13  };
+const SDL_Rect SPRITE_PIPE_TOP    = { .x = 152, .y = 150, .w = 26,  .h = 13  };
+const SDL_Rect SPRITE_PIPE_BOTTOM = { .x = 180, .y = 3,   .w = 26,  .h = 13  };
 const SDL_Rect SPRITE_PLAYERS[3] = {
     { .x = 381, .y = 187, .w = 17, .h = 12  },
     { .x = 381, .y = 213, .w = 17, .h = 12  },
@@ -41,6 +41,7 @@ int window_height = 0;
 
 float ground_offset = 0;
 #define GROUND_WIDTH (SPRITE_GROUND.w * SPRITE_SCALE)
+#define PIPE_WIDTH (SPRITE_PIPE.w * SPRITE_SCALE)
 
 SDL_Window   *window;
 SDL_Renderer *renderer;
@@ -131,15 +132,29 @@ void get_background_rect(SDL_FRect *rect) {
 void get_pipe_top_rect(int i, SDL_FRect *rect) {
     rect->x = pipes[i].x;
     rect->y = 0;
-    rect->w = pipe_width;
+    rect->w = PIPE_WIDTH;
     rect->h = pipes[i].gap_y;
+}
+
+void get_pipe_top_end_rect(int i, SDL_FRect *rect) {
+    rect->x = pipes[i].x;
+    rect->y = pipes[i].gap_y - (SPRITE_PIPE_TOP.h * SPRITE_SCALE);
+    rect->w = PIPE_WIDTH;
+    rect->h = (SPRITE_PIPE_TOP.h * SPRITE_SCALE);
 }
 
 void get_pipe_bottom_rect(int i, SDL_FRect *rect) {
     rect->x = pipes[i].x;
     rect->y = pipes[i].gap_y + pipe_gap;
-    rect->w = pipe_width;
+    rect->w = PIPE_WIDTH;
     rect->h = window_height - (window_height / 8.0f) - (pipes[i].gap_y + pipe_gap);
+}
+
+void get_pipe_bottom_end_rect(int i, SDL_FRect *rect) {
+    rect->x = pipes[i].x;
+    rect->y = pipes[i].gap_y + pipe_gap;
+    rect->w = PIPE_WIDTH;
+    rect->h = (SPRITE_PIPE_TOP.h * SPRITE_SCALE);
 }
 
 void get_player_rect(SDL_FRect *rect) {
@@ -193,7 +208,7 @@ void update(float dt) {
     }
 
     // Remove pipes than the player has passed
-    while (pipes[0].x + pipe_width < 0) {
+    while (pipes[0].x + PIPE_WIDTH < 0) {
         // Move pipes down in the array
         for (int i = 0; i < pipes_len - 1; i++) {
             pipes[i] = pipes[i + 1];
@@ -261,8 +276,14 @@ void render() {
         get_pipe_top_rect(i, &rect);
         SDL_RenderCopyF(renderer, texture, &SPRITE_PIPE, &rect);
 
+        get_pipe_top_end_rect(i, &rect);
+        SDL_RenderCopyF(renderer, texture, &SPRITE_PIPE_TOP, &rect);
+
         get_pipe_bottom_rect(i, &rect);
         SDL_RenderCopyF(renderer, texture, &SPRITE_PIPE, &rect);
+
+        get_pipe_bottom_end_rect(i, &rect);
+        SDL_RenderCopyF(renderer, texture, &SPRITE_PIPE_BOTTOM, &rect);
     }
 
     get_player_rect(&rect);
@@ -315,7 +336,7 @@ int main(int argc, char *argv[]) {
     }
 
     texture = IMG_LoadTexture(renderer, "spritesheet.png");
-    if (texture == NULL) {
+    if (!texture) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", IMG_GetError(), window);
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
