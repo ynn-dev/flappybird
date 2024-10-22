@@ -25,15 +25,17 @@ const Uint32 WINDOW_FLAGS = SDL_WINDOW_BORDERLESS | SDL_WINDOW_ALLOW_HIGHDPI;
 const Uint32 WINDOW_FLAGS = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
 #endif
 
-// x, y, w, h
 const SDL_Rect SPRITE_BACKGROUND  = { .x = 3,   .y = 0,   .w = 144, .h = 256 };
 const SDL_Rect SPRITE_GROUND      = { .x = 215, .y = 10,  .w = 12,  .h = 56  };
 const SDL_Rect SPRITE_PIPE        = { .x = 152, .y = 3,   .w = 26,  .h = 147 };
 const SDL_Rect SPRITE_PIPE_TOP    = { .x = 152, .y = 163, .w = 26,  .h = 13  };
 const SDL_Rect SPRITE_PIPE_BOTTOM = { .x = 106, .y = 16,  .w = 26,  .h = 13  };
-const SDL_Rect SPRITE_PLAYER_1    = { .x = 381, .y = 187, .w = 17,  .h = 12  };
-const SDL_Rect SPRITE_PLAYER_2    = { .x = 381, .y = 213, .w = 17,  .h = 12  };
-const SDL_Rect SPRITE_PLAYER_3    = { .x = 381, .y = 239, .w = 17,  .h = 12  };
+
+const SDL_Rect SPRITE_PLAYERS[3] = {
+    { .x = 381, .y = 187, .w = 17,  .h = 12  },
+    { .x = 381, .y = 213, .w = 17,  .h = 12  },
+    { .x = 381, .y = 239, .w = 17,  .h = 12  },
+};
 
 int window_width = 0;
 int window_height = 0;
@@ -47,9 +49,11 @@ SDL_Texture *texture;
 SDL_Event event;
 int running;
 int game_over;
+uint64_t ticks;
 
 float player_y;
-float player_velocity_y;;
+float player_velocity_y;
+const SDL_Rect *player_sprite;
 
 typedef struct pipe {
     float x;
@@ -196,6 +200,7 @@ void update(float dt) {
 
     player_velocity_y += GRAVITY * dt;
     player_y += player_velocity_y * dt;
+    player_sprite = &SPRITE_PLAYERS[ticks % 300 / 100];
 
     // collision detection
 
@@ -256,7 +261,7 @@ void render() {
     get_player_rect(&rect);
     // SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 
-    SDL_RenderCopyF(renderer, texture, &SPRITE_PLAYER_1, &rect);
+    SDL_RenderCopyF(renderer, texture, player_sprite, &rect);
 
     // SDL_RenderFillRectF(renderer, &rect);
 
@@ -265,15 +270,15 @@ void render() {
 
 void run() {
     running           = 1;
-    uint64_t lastTime = SDL_GetTicks64();
+    uint64_t lastTicks = SDL_GetTicks64();
     uint64_t frames   = 0;
 
     reset();
 
     while (running) {
-        uint64_t startTime = SDL_GetTicks64();
-        float dt           = (startTime - lastTime) / 1000.0f;
-        lastTime           = startTime;
+        ticks     = SDL_GetTicks64();
+        float dt  = (ticks - lastTicks) / 1000.0f;
+        lastTicks = ticks;
 
         processEvents();
         update(dt);
