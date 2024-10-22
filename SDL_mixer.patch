@@ -1,0 +1,22 @@
+diff --git a/Xcode/SDL_mixer.xcodeproj/project.pbxproj b/Xcode/SDL_mixer.xcodeproj/project.pbxproj
+index b46c970f..a078481a 100644
+--- a/Xcode/SDL_mixer.xcodeproj/project.pbxproj
++++ b/Xcode/SDL_mixer.xcodeproj/project.pbxproj
+@@ -851,7 +851,7 @@
+ 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+ 				GCC_NO_COMMON_BLOCKS = YES;
+ 				GCC_PREPROCESSOR_DEFINITIONS = (
+-					MUSIC_FLAC_DRFLAC,
++					MUSIC_FLAC_DRFLACX,
+ 					MUSIC_MP3_MINIMP3,
+ 					MUSIC_OGG,
+ 					OGG_USE_STB,
+@@ -901,7 +901,7 @@
+ 				GCC_NO_COMMON_BLOCKS = YES;
+ 				GCC_OPTIMIZATION_LEVEL = 0;
+ 				GCC_PREPROCESSOR_DEFINITIONS = (
+-					MUSIC_FLAC_DRFLAC,
++					MUSIC_FLAC_DRFLACX,
+ 					MUSIC_MP3_MINIMP3,
+ 					MUSIC_OGG,
+ 					OGG_USE_STB,
