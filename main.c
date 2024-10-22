@@ -1,8 +1,19 @@
 #include <SDL2/SDL.h>
 #include <time.h>
 
-const int window_width_initial = 585 * 0.6;
-const int window_height_initial = 1266 * 0.6;
+const int   window_width_initial = 1170 * 0.5;
+const int   window_height_initial = 2532 * 0.5;
+const float player_width = 75.0f;
+const float player_height = 75.0f;
+const float player_y_initial = 100.0f;
+const float gravity = 2000.0f;
+const float jump_velocity_x = -1000.0f;
+const float pipe_velocity_x = -400.0f;
+const float pipe_width = 100.0f;
+const float pipe_gap = 400.0f;
+const float pipe_spacing = 500.0f;
+const float pipe_gap_padding_top = 100.0f;
+const float pipe_gap_padding_bottom = 100.0f;
 
 int window_width = 0;
 int window_height = 0;
@@ -11,21 +22,10 @@ SDL_Window* window;
 SDL_Renderer* renderer;
 SDL_Event event;
 int running;
+int game_over;
 
-const float gravity = 1000.0f;
 float player_velocity_y = 0.0f;
 float player_y = 100.0f;
-
-const float jump_velocity_x = -600.0f;
-
-const float pipe_velocity_x = -200.0f;
-
-const float pipe_width = 100.0f;
-const float pipe_gap = 300.0f;
-const float pipe_spacing = 300.0f;
-
-const float pipe_gap_padding_top = 100.0f;
-const float pipe_gap_padding_bottom = 100.0f;
 
 typedef struct pipe {
     float x;
@@ -35,6 +35,20 @@ typedef struct pipe {
 const int max_pipes = 10;
 pipe pipes[max_pipes];
 int pipes_len = 0;
+
+void reset() {
+    game_over = 0;
+    player_y = player_y_initial;
+    pipes_len = 0;
+}
+
+void action() {
+    if (!game_over) {
+        player_velocity_y = jump_velocity_x;
+    } else {
+        reset();
+    }
+}
 
 void processEvents() {
     while (SDL_PollEvent(&event)) {
@@ -52,14 +66,14 @@ void processEvents() {
                         running = 0;
                         break;
                     case SDLK_SPACE:
-                        player_velocity_y = jump_velocity_x;
+                        action();
                         break;
                     default:
                         break;
                 }
                 break;
             case SDL_MOUSEBUTTONDOWN:
-                player_velocity_y = jump_velocity_x;
+                action();
                 break;
             // case SDL_WINDOWEVENT:
             //     SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
@@ -78,7 +92,46 @@ int get_gap_y() {
     return (rand() % range) + min_x;
 }
 
+void get_pipe_top_rect(int i, SDL_FRect *rect) {
+    rect->x = pipes[i].x;
+    rect->y = 0;
+    rect->w = pipe_width;
+    rect->h = pipes[i].gap_y;
+}
+
+void get_pipe_bottom_rect(int i, SDL_FRect *rect) {
+    rect->x = pipes[i].x;
+    rect->y = pipes[i].gap_y + pipe_gap;
+    rect->w = pipe_width;
+    rect->h = window_height - pipes[i].gap_y + pipe_gap;
+}
+
+void get_player_rect(SDL_FRect *rect) {
+    rect->x = 100;
+    rect->y = player_y;
+    rect->w = 75;
+    rect->h = 75; 
+}
+
+void get_top_rect(SDL_FRect *rect) {
+    rect->x = 0;
+    rect->y = -100;
+    rect->w = window_width;
+    rect->h = 100;
+}
+
+void get_bottom_rect(SDL_FRect *rect) {
+    rect->x = 0;
+    rect->y = window_height;
+    rect->w = window_width;
+    rect->h = 100;
+}
+
 void update(float dt) {
+    if (game_over) {
+        return;
+    }
+
     // If there are no pipes, create a pipe
     if (pipes_len == 0) {
         pipes[0].x = window_width;
@@ -108,6 +161,35 @@ void update(float dt) {
 
     player_velocity_y += gravity * dt;
     player_y += player_velocity_y * dt;
+
+    // collision detenction
+
+    SDL_FRect a;
+    SDL_FRect b;
+
+    get_player_rect(&a);
+
+    get_top_rect(&b);
+    if (SDL_HasIntersectionF(&a, &b)) {
+        game_over = 1;
+    }
+
+    get_bottom_rect(&b);
+    if (SDL_HasIntersectionF(&a, &b)) {
+        game_over = 1;
+    }
+
+    for (int i = 0; i < pipes_len; i++) {
+        get_pipe_top_rect(i, &b);
+        if (SDL_HasIntersectionF(&a, &b)) {
+            game_over = 1;
+        }
+
+        get_pipe_bottom_rect(i, &b);
+        if (SDL_HasIntersectionF(&a, &b)) {
+            game_over = 1;
+        }
+    }
 }
 
 void render() {
@@ -117,27 +199,16 @@ void render() {
     SDL_FRect rect;
 
     for (int i = 0; i < pipes_len; i++) {
-        rect.x = pipes[i].x;
-        rect.y = 0;
-        rect.w = pipe_width;
-        rect.h = pipes[i].gap_y;
-
+        get_pipe_top_rect(i, &rect);
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderFillRectF(renderer, &rect);
 
-        rect.x = pipes[i].x;
-        rect.y = pipes[i].gap_y + pipe_gap;
-        rect.w = pipe_width;
-        rect.h = pipes[i].gap_y + pipe_gap + 1000;
-
+        get_pipe_bottom_rect(i, &rect);
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderFillRectF(renderer, &rect);
     }
 
-    rect.x = 100;
-    rect.y = player_y;
-    rect.w = 75;
-    rect.h = 75; 
+    get_player_rect(&rect);
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderFillRectF(renderer, &rect);
@@ -149,6 +220,8 @@ void run() {
     running           = 1;
     uint64_t lastTime = SDL_GetTicks64();
     uint64_t frames   = 0;
+
+    reset();
 
     while (running) {
         uint64_t startTime = SDL_GetTicks64();
