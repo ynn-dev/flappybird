@@ -8,21 +8,38 @@ const Uint32 WINDOW_FLAGS = SDL_WINDOW_BORDERLESS | SDL_WINDOW_ALLOW_HIGHDPI;
 const Uint32 WINDOW_FLAGS = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
 #endif
 
+#define COLLISION_DETECTION 0
+
 const SDL_Rect SPRITE_BACKGROUND  = { .x = 3,   .y = 0,   .w = 144, .h = 256 };
 const SDL_Rect SPRITE_GROUND      = { .x = 215, .y = 10,  .w = 12,  .h = 56  };
 const SDL_Rect SPRITE_PIPE        = { .x = 152, .y = 3,   .w = 26,  .h = 147 };
 const SDL_Rect SPRITE_PIPE_TOP    = { .x = 152, .y = 150, .w = 26,  .h = 13  };
 const SDL_Rect SPRITE_PIPE_BOTTOM = { .x = 180, .y = 3,   .w = 26,  .h = 13  };
-const SDL_Rect SPRITE_PLAYERS[3] = {
+const SDL_Rect SPRITE_PLAYERS[3]  = {
     { .x = 381, .y = 187, .w = 17, .h = 12  },
     { .x = 381, .y = 213, .w = 17, .h = 12  },
     { .x = 381, .y = 239, .w = 17, .h = 12  },
+};
+
+const SDL_Rect SPRITE_NUMBERS[10] = {
+    { .x = 254, .y = 98,  .w = 12, .h = 18 },
+    { .x = 238, .y = 80,  .w = 8,  .h = 18 },
+    { .x = 325, .y = 148, .w = 12, .h = 18 },
+    { .x = 339, .y = 148, .w = 12, .h = 18 },
+    { .x = 353, .y = 148, .w = 12, .h = 18 },
+    { .x = 367, .y = 148, .w = 12, .h = 18 },
+    { .x = 325, .y = 172, .w = 12, .h = 18 },
+    { .x = 339, .y = 172, .w = 12, .h = 18 },
+    { .x = 353, .y = 172, .w = 12, .h = 18 },
+    { .x = 367, .y = 172, .w = 12, .h = 18 },
 };
 
 const float SPRITE_SCALE = 7.0f;
 
 #define GROUND_WIDTH (SPRITE_GROUND.w * SPRITE_SCALE)
 #define PIPE_WIDTH (SPRITE_PIPE.w * SPRITE_SCALE)
+
+#define PLAYER_X (window_width / 5)
 
 const int   window_width_initial = 1170 * 0.5;
 const int   window_height_initial = 2532 * 0.5;
@@ -43,7 +60,6 @@ int window_width  = 0;
 int window_height = 0;
 
 float ground_offset = 0;
-
 
 SDL_Window   *window;
 SDL_Renderer *renderer;
@@ -68,11 +84,15 @@ const int max_pipes = 10;
 pipe pipes[max_pipes];
 int pipes_len = 0;
 
+int pipe_to_pass = 0;
+
 void reset() {
     game_over = 0;
     player_y = player_y_initial;
     player_velocity_y = player_velocity_y_initial;
     pipes_len = 0;
+    score = 0;
+    pipe_to_pass = 0;
 }
 
 void action() {
@@ -108,9 +128,9 @@ void processEvents() {
             case SDL_MOUSEBUTTONDOWN:
                 action();
                 break;
-            // case SDL_WINDOWEVENT:
-            //     SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
-            //     break;
+            case SDL_WINDOWEVENT:
+                SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
+                break;
             default:
                 break;
         }
@@ -161,7 +181,7 @@ void get_pipe_bottom_end_rect(int i, SDL_FRect *rect) {
 }
 
 void get_player_rect(SDL_FRect *rect) {
-    rect->x = (window_width / 5);
+    rect->x = PLAYER_X;
     rect->y = player_y;
     rect->w = 17 * SPRITE_SCALE;
     rect->h = 12 * SPRITE_SCALE;
@@ -217,6 +237,7 @@ void update(float dt) {
             pipes[i] = pipes[i + 1];
         }
         pipes_len--;
+        pipe_to_pass--;
     }
 
     for (int i = 0; i < pipes_len; i++) {
@@ -227,6 +248,7 @@ void update(float dt) {
     player_y += player_velocity_y * dt;
     player_sprite = &SPRITE_PLAYERS[ticks % 300 / 100];
 
+#if COLLISION_DETECTION
     // Collision detection
     SDL_FRect a;
     SDL_FRect b;
@@ -236,23 +258,33 @@ void update(float dt) {
     get_top_rect(&b);
     if (SDL_HasIntersectionF(&a, &b)) {
         game_over = 1;
+        return;
     }
 
     get_bottom_rect(&b);
     if (SDL_HasIntersectionF(&a, &b)) {
         game_over = 1;
+        return;
     }
 
     for (int i = 0; i < pipes_len; i++) {
         get_pipe_top_rect(i, &b);
         if (SDL_HasIntersectionF(&a, &b)) {
             game_over = 1;
+            return;
         }
 
         get_pipe_bottom_rect(i, &b);
         if (SDL_HasIntersectionF(&a, &b)) {
             game_over = 1;
+            return;
         }
+    }
+#endif // COLLISION_DETECTION
+
+    if (PLAYER_X > pipes[pipe_to_pass].x + (PIPE_WIDTH / 2)) {
+        score++;
+        pipe_to_pass++;
     }
 }
 
@@ -291,6 +323,60 @@ void render() {
 
     get_player_rect(&rect);
     SDL_RenderCopyF(renderer, texture, player_sprite, &rect);
+
+    // int score_cache = score;
+    // int digits = 1;
+
+    // while (score_cache / 10 > 0) {
+    //     digits++;
+    //     score_cache /= 10;
+    // }
+
+    // for (int i = digits; i > 0; i--) {
+    //     rect.x = (window_width / 2) - ((SPRITE_NUMBERS[score / (int)pow(10, digits - 1)].w * SPRITE_SCALE) / 2) - 1.1f * (SPRITE_NUMBERS[score / (int)pow(10, digits - 1)].w * SPRITE_SCALE);
+    //     rect.y = 100;
+    //     rect.w = SPRITE_NUMBERS[score / (int)pow(10, digits - 1)].w * SPRITE_SCALE;
+    //     rect.h = SPRITE_NUMBERS[score / (int)pow(10, digits - 1)].h * SPRITE_SCALE;
+    //     SDL_RenderCopyF(renderer, texture, &SPRITE_NUMBERS[score / (int)pow(10, digits - 1)], &rect);
+    // }
+
+    if (score < 10) {
+        rect.x = (window_width / 2) - ((SPRITE_NUMBERS[score].w * SPRITE_SCALE) / 2);
+        rect.y = 100;
+        rect.w = SPRITE_NUMBERS[score].w * SPRITE_SCALE;
+        rect.h = SPRITE_NUMBERS[score].h * SPRITE_SCALE;
+        SDL_RenderCopyF(renderer, texture, &SPRITE_NUMBERS[score], &rect);
+    } else if (score < 100) {
+        rect.x = (window_width / 2) - ((SPRITE_NUMBERS[score / 10 % 10].w * SPRITE_SCALE) / 2) - (SPRITE_NUMBERS[score / 10 % 10].w * SPRITE_SCALE) / 1.9f;
+        rect.y = 100;
+        rect.w = SPRITE_NUMBERS[score / 10 % 10].w * SPRITE_SCALE;
+        rect.h = SPRITE_NUMBERS[score / 10 % 10].h * SPRITE_SCALE;
+        SDL_RenderCopyF(renderer, texture, &SPRITE_NUMBERS[score / 10 % 10], &rect);
+
+        rect.x = (window_width / 2) - ((SPRITE_NUMBERS[score % 10].w * SPRITE_SCALE) / 2) + (SPRITE_NUMBERS[score % 10].w * SPRITE_SCALE) / 1.9f;
+        rect.y = 100;
+        rect.w = SPRITE_NUMBERS[score % 10].w * SPRITE_SCALE;
+        rect.h = SPRITE_NUMBERS[score % 10].h * SPRITE_SCALE;
+        SDL_RenderCopyF(renderer, texture, &SPRITE_NUMBERS[score % 10], &rect);
+    } else if (score < 1000) {
+        rect.x = (window_width / 2) - ((SPRITE_NUMBERS[score / 100].w * SPRITE_SCALE) / 2) - 1.1f * (SPRITE_NUMBERS[score / 100].w * SPRITE_SCALE);
+        rect.y = 100;
+        rect.w = SPRITE_NUMBERS[score / 100].w * SPRITE_SCALE;
+        rect.h = SPRITE_NUMBERS[score / 100].h * SPRITE_SCALE;
+        SDL_RenderCopyF(renderer, texture, &SPRITE_NUMBERS[score / 100], &rect);
+
+        rect.x = (window_width / 2) - ((SPRITE_NUMBERS[score / 10 % 10].w * SPRITE_SCALE) / 2);
+        rect.y = 100;
+        rect.w = SPRITE_NUMBERS[score / 10 % 10].w * SPRITE_SCALE;
+        rect.h = SPRITE_NUMBERS[score / 10 % 10].h * SPRITE_SCALE;
+        SDL_RenderCopyF(renderer, texture, &SPRITE_NUMBERS[score / 10 % 10], &rect);
+
+        rect.x = (window_width / 2) - ((SPRITE_NUMBERS[score % 10].w * SPRITE_SCALE) / 2) + 1.1f * (SPRITE_NUMBERS[score % 10].w * SPRITE_SCALE);
+        rect.y = 100;
+        rect.w = SPRITE_NUMBERS[score % 10].w * SPRITE_SCALE;
+        rect.h = SPRITE_NUMBERS[score % 10].h * SPRITE_SCALE;
+        SDL_RenderCopyF(renderer, texture, &SPRITE_NUMBERS[score % 10], &rect);
+    }
 
     SDL_RenderPresent(renderer);
 }
