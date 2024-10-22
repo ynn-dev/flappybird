@@ -2,23 +2,6 @@
 #include <SDL_image.h>
 #include <time.h>
 
-const int   window_width_initial = 1170 * 0.5;
-const int   window_height_initial = 2532 * 0.5;
-const float player_width = 75.0f;
-const float player_height = 75.0f;
-const float player_y_initial = 100.0f;
-const float player_velocity_y_initial = 0.0f;
-const float GRAVITY = 2300.0f;
-const float jump_velocity_x = -1100.0f;
-const float pipe_velocity_x = -400.0f;
-
-const float pipe_gap = 400.0f;
-const float pipe_spacing = 500.0f;
-const float pipe_gap_padding_top = 100.0f;
-const float pipe_gap_padding_bottom = 100.0f;
-
-const float SPRITE_SCALE = 6.0f;
-
 #if defined(__IPHONEOS__)
 const Uint32 WINDOW_FLAGS = SDL_WINDOW_BORDERLESS | SDL_WINDOW_ALLOW_HIGHDPI;
 #else
@@ -36,12 +19,31 @@ const SDL_Rect SPRITE_PLAYERS[3] = {
     { .x = 381, .y = 239, .w = 17, .h = 12  },
 };
 
+const float SPRITE_SCALE = 7.0f;
+
+#define GROUND_WIDTH (SPRITE_GROUND.w * SPRITE_SCALE)
+#define PIPE_WIDTH (SPRITE_PIPE.w * SPRITE_SCALE)
+
+const int   window_width_initial = 1170 * 0.5;
+const int   window_height_initial = 2532 * 0.5;
+const float player_width = 75.0f;
+const float player_height = 75.0f;
+const float player_y_initial = 100.0f;
+const float player_velocity_y_initial = 0.0f;
+const float GRAVITY = 3000.0f;
+const float jump_velocity_x = -1100.0f;
+const float pipe_velocity_x = -400.0f;
+
+const float pipe_gap = 400.0f;
+#define pipe_spacing (SPRITE_PIPE.w * SPRITE_SCALE * 3.0f)
+const float pipe_gap_padding_top = 100.0f;
+const float pipe_gap_padding_bottom = 100.0f;
+
 int window_width  = 0;
 int window_height = 0;
 
 float ground_offset = 0;
-#define GROUND_WIDTH (SPRITE_GROUND.w * SPRITE_SCALE)
-#define PIPE_WIDTH (SPRITE_PIPE.w * SPRITE_SCALE)
+
 
 SDL_Window   *window;
 SDL_Renderer *renderer;
@@ -51,6 +53,7 @@ SDL_Event     event;
 int      running;
 int      game_over;
 uint64_t ticks;
+int      score;
 
 float player_y;
 float player_velocity_y;
@@ -311,7 +314,7 @@ void run() {
         frames++;
     }
 
-    printf("ticks = %llu, frames = %llu", SDL_GetTicks64(), frames);
+    // printf("ticks = %llu, frames = %llu", SDL_GetTicks64(), frames);
 }
 
 int main(int argc, char *argv[]) {
@@ -351,7 +354,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    printf("width = %d, height = %d\n", window_width, window_height);
+    // printf("width = %d, height = %d\n", window_width, window_height);
 
     run();
 
