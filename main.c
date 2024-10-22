@@ -111,7 +111,7 @@ void processEvents() {
 
 int get_gap_y() {
     int min_x = pipe_gap_padding_top;
-    int max_x = window_height - pipe_gap - pipe_gap_padding_bottom;
+    int max_x = window_height - (window_height / 8.0f) - pipe_gap - pipe_gap_padding_bottom;
     int range = max_x - min_x;
 
     return (rand() % range) + min_x;
@@ -128,7 +128,7 @@ void get_pipe_bottom_rect(int i, SDL_FRect *rect) {
     rect->x = pipes[i].x;
     rect->y = pipes[i].gap_y + pipe_gap;
     rect->w = pipe_width;
-    rect->h = window_height - pipes[i].gap_y + pipe_gap;
+    rect->h = window_height - (window_height / 8.0f) - (pipes[i].gap_y + pipe_gap);
 }
 
 void get_player_rect(SDL_FRect *rect) {
