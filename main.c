@@ -7,20 +7,30 @@ const int   window_height_initial = 2532 * 0.5;
 const float player_width = 75.0f;
 const float player_height = 75.0f;
 const float player_y_initial = 100.0f;
+const float player_velocity_y_initial = 0.0f;
 const float gravity = 2000.0f;
 const float jump_velocity_x = -1000.0f;
 const float pipe_velocity_x = -400.0f;
-const float pipe_width = 100.0f;
+const float pipe_width = 156.0f;
 const float pipe_gap = 400.0f;
 const float pipe_spacing = 500.0f;
 const float pipe_gap_padding_top = 100.0f;
 const float pipe_gap_padding_bottom = 100.0f;
 
 #if defined(__IPHONEOS__)
-const Uint32 window_flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_ALLOW_HIGHDPI;
+const Uint32 WINDOW_FLAGS = SDL_WINDOW_BORDERLESS | SDL_WINDOW_ALLOW_HIGHDPI;
 #else
-const Uint32 window_flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+const Uint32 WINDOW_FLAGS = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
 #endif
+
+const SDL_Rect SPRITE_BACKGROUND  = {3,   0,   144, 256};
+const SDL_Rect SPRITE_GROUND      = {215, 10,  168, 56};
+const SDL_Rect SPRITE_PIPE        = {152, 3,   26,  147};
+const SDL_Rect SPRITE_PIPE_TOP    = {152, 163, 26,  13};
+const SDL_Rect SPRITE_PIPE_BOTTOM = {106, 16,  26,  13};
+const SDL_Rect SPRITE_PLAYER_1    = {381, 187, 17,  12};
+const SDL_Rect SPRITE_PLAYER_2    = {381, 213, 17,  12};
+const SDL_Rect SPRITE_PLAYER_3    = {381, 239, 17,  12};
 
 int window_width = 0;
 int window_height = 0;
@@ -32,8 +42,8 @@ SDL_Event event;
 int running;
 int game_over;
 
-float player_velocity_y = 0.0f;
-float player_y = 100.0f;
+float player_y;
+float player_velocity_y;;
 
 typedef struct pipe {
     float x;
@@ -47,6 +57,7 @@ int pipes_len = 0;
 void reset() {
     game_over = 0;
     player_y = player_y_initial;
+    player_velocity_y = player_velocity_y_initial;
     pipes_len = 0;
 }
 
@@ -117,8 +128,8 @@ void get_pipe_bottom_rect(int i, SDL_FRect *rect) {
 void get_player_rect(SDL_FRect *rect) {
     rect->x = 100;
     rect->y = player_y;
-    rect->w = 75;
-    rect->h = 75; 
+    rect->w = 17 * 6;
+    rect->h = 12 * 6;
 }
 
 void get_top_rect(SDL_FRect *rect) {
@@ -130,9 +141,9 @@ void get_top_rect(SDL_FRect *rect) {
 
 void get_bottom_rect(SDL_FRect *rect) {
     rect->x = 0;
-    rect->y = window_height;
+    rect->y = (window_height / 8.0f) * 7;
     rect->w = window_width;
-    rect->h = 100;
+    rect->h = (window_height / 8.0f) * 1;
 }
 
 void update(float dt) {
@@ -170,17 +181,12 @@ void update(float dt) {
     player_velocity_y += gravity * dt;
     player_y += player_velocity_y * dt;
 
-    // collision detenction
+    // collision detection
 
     SDL_FRect a;
     SDL_FRect b;
 
     get_player_rect(&a);
-
-    get_top_rect(&b);
-    if (SDL_HasIntersectionF(&a, &b)) {
-        game_over = 1;
-    }
 
     get_bottom_rect(&b);
     if (SDL_HasIntersectionF(&a, &b)) {
@@ -206,19 +212,34 @@ void render() {
 
     SDL_FRect rect;
 
+    rect.x = 0;
+    rect.y = 0;
+    rect.w = window_width;
+    rect.h = window_height;
+
+    SDL_RenderCopyF(renderer, texture, &SPRITE_BACKGROUND, &rect);
+
+    rect.x = 0;
+    rect.y = (window_height / 8.0f) * 7;
+    rect.w = window_width;
+    rect.h = (window_height / 8.0f) * 1;
+
+    SDL_RenderCopyF(renderer, texture, &SPRITE_GROUND, &rect);
+
     for (int i = 0; i < pipes_len; i++) {
         get_pipe_top_rect(i, &rect);
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        SDL_RenderFillRectF(renderer, &rect);
+        SDL_RenderCopyF(renderer, texture, &SPRITE_PIPE, &rect);
 
         get_pipe_bottom_rect(i, &rect);
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        SDL_RenderFillRectF(renderer, &rect);
+        SDL_RenderCopyF(renderer, texture, &SPRITE_PIPE, &rect);
     }
 
     get_player_rect(&rect);
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderFillRectF(renderer, &rect);
+    // SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+
+    SDL_RenderCopyF(renderer, texture, &SPRITE_PLAYER_1, &rect);
+
+    // SDL_RenderFillRectF(renderer, &rect);
 
     SDL_RenderPresent(renderer);
 }
@@ -253,7 +274,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    window = SDL_CreateWindow("Flappy Bird", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_width_initial, window_height_initial, window_flags);
+    window = SDL_CreateWindow("Flappy Bird", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_width_initial, window_height_initial, WINDOW_FLAGS);
     if (!window) {
         fprintf(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
         return 1;
