@@ -8,9 +8,14 @@ SDL_Renderer* renderer;
 SDL_Event event;
 int running;
 
-float player_y = 100.0f;
+const float gravity = 1000.0f;
 float player_velocity_y = 0.0f;
-const float gravity = 8.0f;
+float player_y = 100.0f;
+
+const float jump_velocity_x = -600.0f;
+
+const float pipe_velocity_x = -100.0f;
+float pipe_x = 500.0f;
 
 void processEvents() {
     while (SDL_PollEvent(&event)) {
@@ -28,7 +33,7 @@ void processEvents() {
                         running = 0;
                         break;
                     case SDLK_SPACE:
-                        player_velocity_y = -2.5f;
+                        player_velocity_y = jump_velocity_x;
                         break;
                     default:
                         break;
@@ -41,13 +46,35 @@ void processEvents() {
 }
 
 void update(float dt) {
+    pipe_x += pipe_velocity_x * dt;
+
     player_velocity_y += gravity * dt;
-    player_y += player_velocity_y;
+    player_y += player_velocity_y * dt;
 }
 
 void render() {
-    SDL_SetRenderDrawColor(renderer, 128, 64, 200, 255);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
+
+    SDL_FRect pipe = {
+        .x = pipe_x,
+        .y = 0,
+        .w = 100,
+        .h = 400,
+    };
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderFillRectF(renderer, &pipe);
+
+    SDL_FRect pipe2 = {
+        .x = pipe_x,
+        .y = 700,
+        .w = 100,
+        .h = 300,
+    };
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderFillRectF(renderer, &pipe2);
 
     SDL_FRect rect = {
         .x = 100,
@@ -56,7 +83,7 @@ void render() {
         .h = 100, 
     };
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderFillRectF(renderer, &rect);
 
     SDL_RenderPresent(renderer);
@@ -66,6 +93,8 @@ void run() {
     running = 1;
     Uint64 lastTime = SDL_GetTicks64();
 
+    uint64_t frames = 0;
+
     while (running) {
         Uint64 startTime = SDL_GetTicks64();
         float dt         = (startTime - lastTime) / 1000.0f;
@@ -74,7 +103,11 @@ void run() {
         processEvents();
         update(dt);
         render();
+
+        frames++;
     }
+
+    printf("ticks = %llu, frames = %llu", SDL_GetTicks64(), frames);
 }
 
 int main(int argc, char *argv[]) {
@@ -89,7 +122,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!renderer) {
         fprintf(stderr, "Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
         SDL_DestroyWindow(window);
