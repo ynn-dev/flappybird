@@ -17,6 +17,8 @@ const SDL_Rect SPRITE_GROUND       = { .x = 215, .y = 10,  .w = 12,  .h = 56  };
 const SDL_Rect SPRITE_LOGO         = { .x = 152, .y = 200, .w = 89,  .h = 24  };
 const SDL_Rect SPRITE_BUTTON_START = { .x = 212, .y = 230, .w = 40,  .h = 14  };
 const SDL_Rect SPRITE_BUTTON_OK    = { .x = 212, .y = 154, .w = 40,  .h = 14  };
+const SDL_Rect SPRITE_BUTTON_PAUSE = { .x = 261, .y = 174, .w = 13,  .h = 14  };
+const SDL_Rect SPRITE_BUTTON_PLAY  = { .x = 412, .y = 94,  .w = 13,  .h = 14  };
 const SDL_Rect SPRITE_GET_READY    = { .x = 254, .y = 71,  .w = 92,  .h = 25  };
 const SDL_Rect SPRITE_TAP          = { .x = 370, .y = 43,  .w = 57,  .h = 49  };
 const SDL_Rect SPRITE_GAME_OVER    = { .x = 152, .y = 173, .w = 96,  .h = 21  };
@@ -114,6 +116,8 @@ int pipes_len = 0;
 
 int pipe_to_pass = 0;
 
+int pause = 0;
+
 void reset() {
     game_over = 0;
     player_y = ((window_height) - (window_height / 8.0f)) / 2 - sprite_height(&SPRITE_PLAYERS[0]) / 2;
@@ -195,6 +199,13 @@ void get_rect_ready_tap(SDL_FRect *rect) {
     rect->y = (window_height / 2) - sprite_height(&SPRITE_TAP) / 2;
     rect->w = sprite_width(&SPRITE_TAP);
     rect->h = sprite_height(&SPRITE_TAP);
+}
+
+void get_rect_play_pause(SDL_FRect *rect) {
+    rect->x = (window_width / 10);
+    rect->y = (window_width / 10);
+    rect->w = sprite_width(&SPRITE_BUTTON_PAUSE);
+    rect->h = sprite_height(&SPRITE_BUTTON_PAUSE);
 }
 
 void get_rect_game_over(SDL_FRect *rect) {
@@ -685,6 +696,8 @@ void render_play() {
     get_rect_player(&rect);
     SDL_RenderCopyF(renderer, texture, player_sprite, &rect);
 
+    get_rect_play_pause(&rect);
+    SDL_RenderCopyF(renderer, texture, &SPRITE_BUTTON_PAUSE, &rect);
 
     draw_score(&rect);
 
@@ -860,7 +873,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    
     // printf("width = %d, height = %d\n", window_width, window_height);
 
     run();
