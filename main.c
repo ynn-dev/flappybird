@@ -9,7 +9,8 @@ const Uint32 WINDOW_FLAGS = SDL_WINDOW_BORDERLESS | SDL_WINDOW_ALLOW_HIGHDPI;
 const Uint32 WINDOW_FLAGS = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
 #endif
 
-#define COLLISION_DETECTION 1
+#define COLLISION_DETECTION  1
+#define DRAW_PLAYER_COLLIDER 0
 
 const SDL_Rect SPRITE_BACKGROUND   = { .x = 3,   .y = 0,   .w = 144, .h = 256 };
 const SDL_Rect SPRITE_GROUND       = { .x = 215, .y = 10,  .w = 12,  .h = 56  };
@@ -198,6 +199,13 @@ void get_rect_player(SDL_FRect *rect) {
     rect->y = player_y;
     rect->w = sprite_width(player_sprite);
     rect->h = sprite_height(player_sprite);
+}
+
+void get_rect_player_collider(SDL_FRect *rect) {
+    rect->x = PLAYER_X + 1 * SPRITE_SCALE;
+    rect->y = player_y + 1 * SPRITE_SCALE;
+    rect->w = sprite_width(player_sprite) - 2 * SPRITE_SCALE;
+    rect->h = sprite_height(player_sprite) - 2 * SPRITE_SCALE;
 }
 
 void get_pipe_top_rect(int i, SDL_FRect *rect) {
@@ -527,7 +535,7 @@ void update_play(float dt) {
     SDL_FRect a;
     SDL_FRect b;
 
-    get_rect_player(&a);
+    get_rect_player_collider(&a);
 
     get_bottom_rect(&b);
     if (SDL_HasIntersectionF(&a, &b)) {
@@ -624,15 +632,6 @@ void render_ready() {
     SDL_RenderPresent(renderer);
 }
 
-void render_game_over() {
-    SDL_FRect rect;
-
-    get_rect_background(&rect);
-    SDL_RenderCopyF(renderer, texture, &SPRITE_BACKGROUND, &rect);
-
-    SDL_RenderPresent(renderer);
-}
-
 void render_play() {
     SDL_FRect rect;
 
@@ -654,6 +653,49 @@ void render_play() {
         get_pipe_bottom_end_rect(i, &rect);
         SDL_RenderCopyF(renderer, texture, &SPRITE_PIPE_BOTTOM, &rect);
     }
+
+#if DRAW_PLAYER_COLLIDER
+    get_rect_player_collider(&rect);
+    SDL_SetRenderDrawColor(renderer, 200, 100, 100, 100);
+    SDL_RenderFillRectF(renderer, &rect);
+#endif // DRAW_PLAYER_COLLIDER
+
+    get_rect_player(&rect);
+    SDL_RenderCopyF(renderer, texture, player_sprite, &rect);
+
+
+    draw_score(&rect);
+
+    SDL_RenderPresent(renderer);
+}
+
+void render_game_over() {
+    SDL_FRect rect;
+
+    get_rect_background(&rect);
+    SDL_RenderCopyF(renderer, texture, &SPRITE_BACKGROUND, &rect);
+
+    draw_ground(&rect);
+
+    for (int i = 0; i < pipes_len; i++) {
+        get_pipe_top_rect(i, &rect);
+        SDL_RenderCopyF(renderer, texture, &SPRITE_PIPE, &rect);
+
+        get_pipe_top_end_rect(i, &rect);
+        SDL_RenderCopyF(renderer, texture, &SPRITE_PIPE_TOP, &rect);
+
+        get_pipe_bottom_rect(i, &rect);
+        SDL_RenderCopyF(renderer, texture, &SPRITE_PIPE, &rect);
+
+        get_pipe_bottom_end_rect(i, &rect);
+        SDL_RenderCopyF(renderer, texture, &SPRITE_PIPE_BOTTOM, &rect);
+    }
+
+#if DRAW_PLAYER_COLLIDER
+    get_rect_player_collider(&rect);
+    SDL_SetRenderDrawColor(renderer, 200, 100, 100, 100);
+    SDL_RenderFillRectF(renderer, &rect);
+#endif // DRAW_PLAYER_COLLIDER
 
     get_rect_player(&rect);
     SDL_RenderCopyF(renderer, texture, player_sprite, &rect);
