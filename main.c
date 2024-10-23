@@ -16,8 +16,11 @@ const SDL_Rect SPRITE_BACKGROUND   = { .x = 3,   .y = 0,   .w = 144, .h = 256 };
 const SDL_Rect SPRITE_GROUND       = { .x = 215, .y = 10,  .w = 12,  .h = 56  };
 const SDL_Rect SPRITE_LOGO         = { .x = 152, .y = 200, .w = 89,  .h = 24  };
 const SDL_Rect SPRITE_BUTTON_START = { .x = 212, .y = 230, .w = 40,  .h = 14  };
+const SDL_Rect SPRITE_BUTTON_OK    = { .x = 212, .y = 154, .w = 40,  .h = 14  };
 const SDL_Rect SPRITE_GET_READY    = { .x = 254, .y = 71,  .w = 92,  .h = 25  };
 const SDL_Rect SPRITE_TAP          = { .x = 370, .y = 43,  .w = 57,  .h = 49  };
+const SDL_Rect SPRITE_GAME_OVER    = { .x = 152, .y = 173, .w = 96,  .h = 21  };
+const SDL_Rect SPRITE_BOARD        = { .x = 260, .y = 195, .w = 113, .h = 57  };
 const SDL_Rect SPRITE_PIPE         = { .x = 152, .y = 3,   .w = 26,  .h = 147 };
 const SDL_Rect SPRITE_PIPE_TOP     = { .x = 152, .y = 150, .w = 26,  .h = 13  };
 const SDL_Rect SPRITE_PIPE_BOTTOM  = { .x = 180, .y = 3,   .w = 26,  .h = 13  };
@@ -192,6 +195,27 @@ void get_rect_ready_tap(SDL_FRect *rect) {
     rect->y = (window_height / 2) - sprite_height(&SPRITE_TAP) / 2;
     rect->w = sprite_width(&SPRITE_TAP);
     rect->h = sprite_height(&SPRITE_TAP);
+}
+
+void get_rect_game_over(SDL_FRect *rect) {
+    rect->x = (window_width / 2) - sprite_width(&SPRITE_GAME_OVER) / 2;
+    rect->y = (window_height / 4.0f);
+    rect->w = sprite_width(&SPRITE_GAME_OVER);
+    rect->h = sprite_height(&SPRITE_GAME_OVER);
+}
+
+void get_rect_game_over_board(SDL_FRect *rect) {
+    rect->x = (window_width / 2) - sprite_width(&SPRITE_BOARD) / 2;
+    rect->y = (window_height / 2) - sprite_height(&SPRITE_BOARD) / 2;
+    rect->w = sprite_width(&SPRITE_BOARD);
+    rect->h = sprite_height(&SPRITE_BOARD);
+}
+
+void get_rect_game_over_button(SDL_FRect *rect) {
+    rect->x = (window_width / 2) - sprite_width(&SPRITE_BUTTON_OK) / 2;
+    rect->y = (window_height / 4.0f) * 3.0f;
+    rect->w = sprite_width(&SPRITE_BUTTON_OK);
+    rect->h = sprite_height(&SPRITE_BUTTON_OK);
 }
 
 void get_rect_player(SDL_FRect *rect) {
@@ -588,8 +612,6 @@ void update(float dt) {
     }
 }
 
-
-
 void render_menu() {
     SDL_FRect rect;
 
@@ -701,6 +723,15 @@ void render_game_over() {
     SDL_RenderCopyF(renderer, texture, player_sprite, &rect);
 
     draw_score(&rect);
+
+    get_rect_game_over(&rect);
+    SDL_RenderCopyF(renderer, texture, &SPRITE_GAME_OVER, &rect);
+
+    get_rect_game_over_board(&rect);
+    SDL_RenderCopyF(renderer, texture, &SPRITE_BOARD, &rect);
+
+    get_rect_game_over_button(&rect);
+    SDL_RenderCopyF(renderer, texture, &SPRITE_BUTTON_OK, &rect);
 
     SDL_RenderPresent(renderer);
 }
