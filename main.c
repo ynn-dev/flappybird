@@ -15,6 +15,7 @@ const SDL_Rect SPRITE_BACKGROUND   = { .x = 3,   .y = 0,   .w = 144, .h = 256 };
 const SDL_Rect SPRITE_GROUND       = { .x = 215, .y = 10,  .w = 12,  .h = 56  };
 const SDL_Rect SPRITE_LOGO         = { .x = 152, .y = 200, .w = 89,  .h = 24  };
 const SDL_Rect SPRITE_BUTTON_START = { .x = 212, .y = 230, .w = 40,  .h = 14  };
+const SDL_Rect SPRITE_GET_READY    = { .x = 254, .y = 71,  .w = 92,  .h = 25  };
 const SDL_Rect SPRITE_TAP          = { .x = 370, .y = 43,  .w = 57,  .h = 49  };
 const SDL_Rect SPRITE_PIPE         = { .x = 152, .y = 3,   .w = 26,  .h = 147 };
 const SDL_Rect SPRITE_PIPE_TOP     = { .x = 152, .y = 150, .w = 26,  .h = 13  };
@@ -176,6 +177,13 @@ void get_rect_menu_button(SDL_FRect *rect) {
     rect->y = (window_height / 4.0f) * 3.0f;
     rect->w = sprite_width(&SPRITE_BUTTON_START);
     rect->h = sprite_height(&SPRITE_BUTTON_START);
+}
+
+void get_rect_ready_get_ready(SDL_FRect *rect) {
+    rect->x = (window_width / 2) - sprite_width(&SPRITE_GET_READY) / 2;
+    rect->y = (window_height / 4.0f);
+    rect->w = sprite_width(&SPRITE_GET_READY);
+    rect->h = sprite_height(&SPRITE_GET_READY);
 }
 
 void get_rect_ready_tap(SDL_FRect *rect) {
@@ -542,7 +550,7 @@ void update_play(float dt) {
     }
 #endif // COLLISION_DETECTION
 
-    if (PLAYER_X > pipes[pipe_to_pass].x + (sprite_width(&SPRITE_PIPE) / 2)) {
+    if (PLAYER_X > pipes[pipe_to_pass].x) {
         Mix_PlayChannel(-1, sfx_point, 0);
         score++;
         pipe_to_pass++;
@@ -600,8 +608,8 @@ void render_ready() {
     get_rect_background(&rect);
     SDL_RenderCopyF(renderer, texture, &SPRITE_BACKGROUND, &rect);
 
-    // get_rect_menu_logo(&rect);
-    // SDL_RenderCopyF(renderer, texture, &SPRITE_LOGO, &rect);
+    get_rect_ready_get_ready(&rect);
+    SDL_RenderCopyF(renderer, texture, &SPRITE_GET_READY, &rect);
 
     get_rect_player(&rect);
     SDL_RenderCopyF(renderer, texture, player_sprite, &rect);
