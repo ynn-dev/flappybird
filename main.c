@@ -52,10 +52,10 @@ const float GRAVITY = 3000.0f;
 const float jump_velocity_x = -1100.0f;
 const float pipe_velocity_x = -400.0f;
 
-const float pipe_gap = 400.0f;
-#define pipe_spacing (SPRITE_PIPE.w * SPRITE_SCALE * 3.0f)
-const float pipe_gap_padding_top = 100.0f;
-const float pipe_gap_padding_bottom = 100.0f;
+const float PIPE_GAP                = 400.0f;
+#define     PIPE_SPACING            (SPRITE_PIPE.w * SPRITE_SCALE * 3.0f)
+const float PIPE_GAP_PADDING_TOP    = 100.0f;
+const float PIPE_GAP_PADDING_BOTTOM = 100.0f;
 
 int window_width  = 0;
 int window_height = 0;
@@ -153,11 +153,10 @@ void processEvents() {
 }
 
 int get_gap_y() {
-    int min_x = pipe_gap_padding_top;
-    int max_x = window_height - (window_height / 8.0f) - pipe_gap - pipe_gap_padding_bottom;
-    int range = max_x - min_x;
-
-    return (rand() % range) + min_x;
+    int min_y = ((window_height) - (window_height / 8.0f)) / 2 - PIPE_GAP / 2 - 400;
+    int max_y = ((window_height) - (window_height / 8.0f)) / 2 - PIPE_GAP / 2 + 400;
+    int range = max_y - min_y;
+    return (rand() % range) + min_y;
 }
 
 void get_background_rect(SDL_FRect *rect) {
@@ -183,14 +182,14 @@ void get_pipe_top_end_rect(int i, SDL_FRect *rect) {
 
 void get_pipe_bottom_rect(int i, SDL_FRect *rect) {
     rect->x = pipes[i].x;
-    rect->y = pipes[i].gap_y + pipe_gap;
+    rect->y = pipes[i].gap_y + PIPE_GAP;
     rect->w = PIPE_WIDTH;
-    rect->h = window_height - (window_height / 8.0f) - (pipes[i].gap_y + pipe_gap);
+    rect->h = window_height - (window_height / 8.0f) - (pipes[i].gap_y + PIPE_GAP);
 }
 
 void get_pipe_bottom_end_rect(int i, SDL_FRect *rect) {
     rect->x = pipes[i].x;
-    rect->y = pipes[i].gap_y + pipe_gap;
+    rect->y = pipes[i].gap_y + PIPE_GAP;
     rect->w = PIPE_WIDTH;
     rect->h = (SPRITE_PIPE_TOP.h * SPRITE_SCALE);
 }
@@ -238,8 +237,8 @@ void update(float dt) {
         pipes_len++;
     }
 
-    // If the last pipe is futher away than pipe_spacing, create a new one
-    if (pipes_len < max_pipes && pipes[pipes_len - 1].x < window_width - pipe_spacing) {
+    // If the last pipe is futher away than PIPE_SPACING, create a new one
+    if (pipes_len < max_pipes && pipes[pipes_len - 1].x < window_width - PIPE_SPACING) {
         pipes[pipes_len].x = window_width;
         pipes[pipes_len].gap_y = get_gap_y();
         pipes_len++; 
