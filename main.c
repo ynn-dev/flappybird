@@ -536,6 +536,8 @@ void get_mouse_state() {
 }
 
 int mouse_is_in_rect(const SDL_FRect *rect, int debug) {
+    get_mouse_state();
+
     if (debug) {
         printf("mouse x = %f, mouse y = %f, rect x = %f, rect y = %f, rect w = %f. rect h = %f\n",
             mouse_pos.x, mouse_pos.y, rect->x, rect->y, rect->w, rect->h);
@@ -545,8 +547,6 @@ int mouse_is_in_rect(const SDL_FRect *rect, int debug) {
 }
 
 void process_events_menu() {
-    get_mouse_state();
-
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
             case SDL_QUIT:
@@ -568,6 +568,9 @@ void process_events_menu() {
                         break;
                 }
                 break;
+            case SDL_MOUSEMOTION:
+                get_mouse_state();
+                break;
             case SDL_MOUSEBUTTONUP: {
                 SDL_FRect rect;
                 get_rect_menu_button(&rect, 0);
@@ -586,8 +589,6 @@ void process_events_menu() {
 }
 
 void process_events_ready() {
-    get_mouse_state();
-
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
             case SDL_QUIT:
@@ -609,6 +610,9 @@ void process_events_ready() {
                         break;
                 }
                 break;
+            case SDL_MOUSEMOTION:
+                get_mouse_state();
+                break;
             case SDL_MOUSEBUTTONDOWN:
                 go_to_state(STATE_PLAY);
                 break;
@@ -622,8 +626,6 @@ void process_events_ready() {
 }
 
 void process_events_play() {
-    get_mouse_state();
-
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
             case SDL_QUIT:
@@ -644,6 +646,9 @@ void process_events_play() {
                     default:
                         break;
                 }
+                break;
+            case SDL_MOUSEMOTION:
+                get_mouse_state();
                 break;
             case SDL_MOUSEBUTTONDOWN: {
                 SDL_FRect rect;
@@ -669,8 +674,6 @@ void process_events_play() {
 }
 
 void process_events_game_over() {
-    get_mouse_state();
-
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
             case SDL_QUIT:
@@ -691,6 +694,9 @@ void process_events_game_over() {
                     default:
                         break;
                 }
+                break;
+            case SDL_MOUSEMOTION:
+                get_mouse_state();
                 break;
             case SDL_MOUSEBUTTONUP: {
                 SDL_FRect rect;
@@ -968,6 +974,7 @@ void go_to_state(game_state_t state) {
             update = update_menu;
             render = render_menu;
             reset();
+            Mix_PlayChannel(-1, sfx_swooshing, 0);
             break;
         case STATE_READY:
             process_events = process_events_ready;
