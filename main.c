@@ -2,6 +2,8 @@
 #include <SDL_image.h>
 #include <SDL_mixer.h>
 #include <time.h>
+#include <stdio.h>
+#include <errno.h>
 
 #if defined(__IPHONEOS__)
 const Uint32 WINDOW_FLAGS = SDL_WINDOW_BORDERLESS | SDL_WINDOW_ALLOW_HIGHDPI;
@@ -23,6 +25,7 @@ const SDL_Rect SPRITE_GET_READY    = { .x = 254, .y = 71,  .w = 92,  .h = 25  };
 const SDL_Rect SPRITE_TAP          = { .x = 370, .y = 43,  .w = 57,  .h = 49  };
 const SDL_Rect SPRITE_GAME_OVER    = { .x = 152, .y = 173, .w = 96,  .h = 21  };
 const SDL_Rect SPRITE_BOARD        = { .x = 260, .y = 195, .w = 113, .h = 57  };
+const SDL_Rect SPRITE_NEW          = { .x = 214, .y = 126, .w = 16,  .h = 7   };
 const SDL_Rect SPRITE_PIPE         = { .x = 152, .y = 3,   .w = 26,  .h = 147 };
 const SDL_Rect SPRITE_PIPE_TOP     = { .x = 152, .y = 150, .w = 26,  .h = 13  };
 const SDL_Rect SPRITE_PIPE_BOTTOM  = { .x = 180, .y = 3,   .w = 26,  .h = 13  };
@@ -43,6 +46,19 @@ const SDL_Rect SPRITE_NUMBERS[10] = {
     { .x = 339, .y = 172, .w = 12, .h = 18 },
     { .x = 353, .y = 172, .w = 12, .h = 18 },
     { .x = 367, .y = 172, .w = 12, .h = 18 },
+};
+
+const SDL_Rect SPRITE_NUMBERS_SM[10] = {
+    { .x = 279, .y = 171, .w = 6,  .h = 7 },
+    { .x = 282, .y = 180, .w = 3,  .h = 7 },
+    { .x = 289, .y = 171, .w = 6, .h = 7 },
+    { .x = 289, .y = 180, .w = 6, .h = 7 },
+    { .x = 298, .y = 171, .w = 6, .h = 7 },
+    { .x = 298, .y = 180, .w = 6, .h = 7 },
+    { .x = 306, .y = 171, .w = 6, .h = 7 },
+    { .x = 306, .y = 180, .w = 6, .h = 7 },
+    { .x = 315, .y = 171, .w = 6, .h = 7 },
+    { .x = 315, .y = 180, .w = 6, .h = 7 },
 };
 
 const float SPRITE_SCALE = 7.0f;
@@ -99,7 +115,10 @@ SDL_Event     event;
 int      running;
 int      game_over;
 uint64_t ticks;
-int      score;
+
+int score;
+int max_score;
+int new_max_score;
 
 float player_y;
 float player_velocity_y;
@@ -118,6 +137,85 @@ int pipe_to_pass = 0;
 
 int pause = 0;
 
+// int user_event_code = 0;
+
+SDL_Thread *save_thread;
+SDL_mutex *save_mutex;
+SDL_cond *save_cond;
+
+const char *SAVE_FILE = "data.txt";
+
+int load_save_file() {
+    FILE* f = fopen(SAVE_FILE, "r");
+    if (!f) {
+        if (errno == ENOENT) {
+            printf("save file doesn't exist, max_score = 0\n");
+            fclose(f);
+            // File doesn't exist, that's ok
+            return 0;
+        }
+
+        // TODO: report error using SDL_PushEvents
+        perror("load: failed to open file");
+        fclose(f);
+        return 1;
+    }
+
+    if (fscanf(f, "%d\n", &max_score) < 0) {
+        // TODO: report error using SDL_PushEvents
+        perror("load: failed to read from file");
+        fclose(f);
+        return 1;
+    }
+
+    printf("save: successfully read from file. max_score = %d\n", max_score);
+    fclose(f);
+
+    return 0;
+}
+
+const size_t save_file_errlen = 128;
+char save_file_err[save_file_errlen];
+
+typedef enum user_codes_t {
+    USER_CODE_SAVE_SUCCESS = 0,
+    USER_CODE_SAVE_ERROR   = 1,
+} user_codes_t;
+
+int save_save_file(void *data) {
+    SDL_Event event;
+
+    event.type = SDL_USEREVENT;
+
+    FILE* f = fopen(SAVE_FILE, "w+");
+    if (!f) {
+        event.user.code = USER_CODE_SAVE_ERROR;
+        event.user.data1 = (void *)save_file_err;
+        snprintf(save_file_err, save_file_errlen, "failed to save: %s", strerror(errno));
+        SDL_PushEvent(&event);
+        fclose(f);
+        return 1;
+    }
+
+    if (fprintf(f, "%d\n", max_score) < 0) {
+        event.user.code = USER_CODE_SAVE_ERROR;
+        event.user.data1 = (void *)save_file_err;
+        snprintf(save_file_err, save_file_errlen, "failed to save: %s", strerror(errno));
+        SDL_PushEvent(&event);
+        fclose(f);
+        return 1;
+    }
+
+    event.user.code = USER_CODE_SAVE_SUCCESS;
+    event.user.data1 = NULL;
+    SDL_PushEvent(&event);
+    fclose(f);
+
+    printf("end of save thread\n");
+
+    return 0;
+}
+
 void reset() {
     game_over = 0;
     player_y = ((window_height) - (window_height / 8.0f)) / 2 - sprite_height(&SPRITE_PLAYERS[0]) / 2;
@@ -125,6 +223,7 @@ void reset() {
     pipes_len = 0;
     score = 0;
     pipe_to_pass = 0;
+    new_max_score = 0;
 }
 
 void jump() {
@@ -144,9 +243,23 @@ void go_to_state(game_state_t state) {
             reset();
             jump();
             break;
-        case STATE_GAME_OVER:
+        case STATE_GAME_OVER: {
             Mix_PlayChannel(-1, sfx_hit, 0);
+
+            if (score <= max_score) {
+                break;
+            }
+
+            new_max_score = 1;
+            max_score = score;
+
+            save_thread = SDL_CreateThread(save_save_file, "save_save_file", NULL);
+            if (!save_thread) {
+                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), window);
+            }
+            SDL_DetachThread(save_thread);
             break;
+        }
         default:
             break;
     }
@@ -344,6 +457,77 @@ void draw_score(SDL_FRect *rect) {
     }
 }
 
+void draw_score_small(SDL_FRect *rect) {
+    SDL_FRect board_rect;
+
+    get_rect_game_over_board(&board_rect);
+
+    int score_cache = score;
+    int digit;
+    int digit_width;
+    int digit_height;
+
+    int placement_x = board_rect.x + board_rect.w - 76;
+
+    while (1) {
+        digit = score_cache % 10;
+        digit_width = sprite_width(&SPRITE_NUMBERS_SM[digit]);
+        digit_height = sprite_height(&SPRITE_NUMBERS_SM[digit]);
+
+        rect->x = placement_x - digit_width;
+        rect->y = board_rect.y + 125;
+        rect->w = digit_width;
+        rect->h = digit_height;
+        SDL_RenderCopyF(renderer, texture, &SPRITE_NUMBERS_SM[digit], rect);
+
+        score_cache /= 10;
+        if (score_cache == 0) {
+            break;
+        }
+
+        placement_x = placement_x - digit_width - 6;
+    }
+}
+
+void draw_max_score_small(SDL_FRect *rect) {
+    SDL_FRect board_rect;
+    get_rect_game_over_board(&board_rect);
+
+    int score_cache = max_score;
+    int digit;
+    int digit_width;
+    int digit_height;
+
+    int placement_x = board_rect.x + board_rect.w - 76;
+
+    while (1) {
+        digit = score_cache % 10;
+        digit_width = sprite_width(&SPRITE_NUMBERS_SM[digit]);
+        digit_height = sprite_height(&SPRITE_NUMBERS_SM[digit]);
+
+        rect->x = placement_x - digit_width;
+        rect->y = board_rect.y + 270;
+        rect->w = digit_width;
+        rect->h = digit_height;
+        SDL_RenderCopyF(renderer, texture, &SPRITE_NUMBERS_SM[digit], rect);
+
+        placement_x = placement_x - digit_width - 6;
+
+        score_cache /= 10;
+        if (score_cache == 0) {
+            break;
+        }
+    }
+
+    if (new_max_score) {
+        rect->x = placement_x - 30 - sprite_width(&SPRITE_NEW);
+        rect->y = board_rect.y + 270;
+        rect->w = sprite_width(&SPRITE_NEW);
+        rect->h = sprite_height(&SPRITE_NEW);
+        SDL_RenderCopyF(renderer, texture, &SPRITE_NEW, rect);
+    }
+}
+
 void process_events_menu() {
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -486,6 +670,17 @@ void process_events_game_over() {
             case SDL_WINDOWEVENT:
                 SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
                 break;
+            case SDL_USEREVENT:
+                switch (event.user.code) {
+                    case USER_CODE_SAVE_SUCCESS:
+                        printf("successful file save, max_score = %d\n", max_score);
+                        break;
+                    case USER_CODE_SAVE_ERROR:
+                        printf("error saving file: %s\n", (const char *)event.user.data1);
+                        break;
+                    default:
+                        break;
+                }
             default:
                 break;
         }
@@ -743,6 +938,9 @@ void render_game_over() {
     get_rect_game_over_board(&rect);
     SDL_RenderCopyF(renderer, texture, &SPRITE_BOARD, &rect);
 
+    draw_score_small(&rect);
+    draw_max_score_small(&rect);
+
     get_rect_game_over_button(&rect);
     SDL_RenderCopyF(renderer, texture, &SPRITE_BUTTON_OK, &rect);
 
@@ -792,54 +990,57 @@ void run() {
 
 int main(int argc, char *argv[]) {
     srand(time(NULL));
+    const size_t errlen = 128;
+    char errstr[errlen];
 
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-        fprintf(stderr, "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+        snprintf(errstr, errlen, "Error initialising SDL: %s", SDL_GetError());
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
         return 1;
     }
 
     if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", IMG_GetError(), window);
+        snprintf(errstr, errlen, "Error initialising SDL_image: %s", IMG_GetError());
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
         return 1;
     }
 
     if (Mix_Init(0) != 0) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", Mix_GetError(), window);
+        snprintf(errstr, errlen, "Error initialising SDL_mixer: %s", Mix_GetError());
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
         return 1;
     }
 
     window = SDL_CreateWindow("Flappy Bird", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_width_initial, window_height_initial, WINDOW_FLAGS);
     if (!window) {
-        fprintf(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        snprintf(errstr, errlen, "Error creating window: %s", SDL_GetError());
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
         return 1;
     }
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!renderer) {
-        fprintf(stderr, "Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
-        SDL_DestroyWindow(window);
+        snprintf(errstr, errlen, "Error creating renderer: %s", SDL_GetError());
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
         return 1;
     }
 
     if (SDL_GetRendererOutputSize(renderer, &window_width, &window_height) != 0) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), window);
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
+        snprintf(errstr, errlen, "Error getting renderer output size: %s", SDL_GetError());
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
         return 1;
     }
 
     texture = IMG_LoadTexture(renderer, "spritesheet.png");
     if (!texture) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", IMG_GetError(), window);
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
+        snprintf(errstr, errlen, "Error loading sprite sheet: %s", IMG_GetError());
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
         return 1;
     }
 
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) != 0) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", Mix_GetError(), window);
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
+        snprintf(errstr, errlen, "Error opening audio device: %s", Mix_GetError());
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
         return 1;
     }
 
@@ -873,7 +1074,36 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    if (load_save_file() != 0) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", strerror(errno), window);
+        return 1;
+    }
+
+    // save_thread = SDL_CreateThread(save_save_file, "save_thread", NULL);
+    // if (!save_thread) {
+    //     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), window);
+    //     return 1;
+    // }
+
+    // save_mutex = SDL_CreateMutex();
+    // if (!save_mutex) {
+    //     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), window);
+    //     return 1;
+    // }
+
+    // save_cond = SDL_CreateCond();
+    // if (!save_mutex) {
+    //     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), window);
+    //     return 1;
+    // }
+
     // printf("width = %d, height = %d\n", window_width, window_height);
+
+    // user_event_code = SDL_RegisterEvents(1);
+    // if (user_event_code == (Uint32)-1) {
+    //     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Error registering events", window);
+    //     return 1;
+    // }
 
     run();
 
