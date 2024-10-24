@@ -105,12 +105,17 @@ typedef enum game_state_t {
     STATE_GAME_OVER = 4,
 } game_state_t;
 
-game_state_t game_state = STATE_MENU;
+game_state_t game_state;
+void go_to_state(game_state_t state);
+
+void (*process_events)();
+void (*update)(float dt);
+void (*render)();
 
 float logo_offset   = 0; // menu
 float ground_offset = 0; // menu, state, play
 
-SDL_Event     event;
+SDL_Event event;
 
 int      running;
 int      game_over;
@@ -137,11 +142,7 @@ int pipe_to_pass = 0;
 
 int pause = 0;
 
-// int user_event_code = 0;
-
 SDL_Thread *save_thread;
-SDL_mutex *save_mutex;
-SDL_cond *save_cond;
 
 const size_t save_file_path_len = 256;
 char save_file_path[save_file_path_len];
@@ -151,17 +152,14 @@ int load_file() {
     if (!f) {
         if (errno == ENOENT) {
             printf("save file doesn't exist, max_score = 0\n");
-            // File doesn't exist, that's ok
             return 0;
         }
 
-        // TODO: report error using SDL_PushEvents
         perror("load: failed to open file");
         return 1;
     }
 
     if (fscanf(f, "%d\n", &max_score) < 0) {
-        // TODO: report error using SDL_PushEvents
         perror("load: failed to read from file");
         fclose(f);
         return 1;
@@ -230,39 +228,7 @@ void jump() {
     player_velocity_y = jump_velocity_x;
 }
 
-void go_to_state(game_state_t state) {
-    game_state = state;
 
-    switch (state) {
-        case STATE_MENU:
-        case STATE_READY:
-            Mix_PlayChannel(-1, sfx_swooshing, 0);
-            break;
-        case STATE_PLAY:
-            reset();
-            jump();
-            break;
-        case STATE_GAME_OVER: {
-            Mix_PlayChannel(-1, sfx_hit, 0);
-
-            if (score <= max_score) {
-                break;
-            }
-
-            new_max_score = 1;
-            max_score = score;
-
-            save_thread = SDL_CreateThread(save_file, "save_file", NULL);
-            if (!save_thread) {
-                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), window);
-            }
-            SDL_DetachThread(save_thread);
-            break;
-        }
-        default:
-            break;
-    }
-}
 
 int get_gap_y() {
     int min_y = ((window_height) - (window_height / 8.0f)) / 2 - PIPE_GAP / 2 - 400;
@@ -550,18 +516,18 @@ void process_events_menu() {
                 }
                 break;
             case SDL_MOUSEBUTTONDOWN: {
-                // int x, y;
-                // SDL_GetMouseState(&x, &y);
-                // SDL_FPoint point = {x, y};
-                // printf("x = %f, y = %f\n", point.x, point.y);
-                // SDL_FRect rect;
-                // get_rect_menu_button(&rect);
-                // printf("x = %f, y = %f, w = %f, h = %f\n", rect.x, rect.y, rect.w, rect.h);
-                // if (SDL_PointInFRect(&point, &rect)) {
-                //     Mix_PlayChannel(-1, sfx_swooshing, 0);
-                // }
-                go_to_state(STATE_READY);
-                reset();
+                int x, y;
+                SDL_GetMouseState(&x, &y);
+                SDL_FPoint point = {x, y};
+                point.x *= 2; // TODO: depends on retina
+                point.y *= 2; // TODO: depends on retina
+                printf("x = %f, y = %f\n", point.x, point.y);
+                SDL_FRect rect;
+                get_rect_menu_button(&rect);
+                printf("x = %f, y = %f, w = %f, h = %f\n", rect.x, rect.y, rect.w, rect.h);
+                if (SDL_PointInFRect(&point, &rect)) {
+                    go_to_state(STATE_READY);
+                }
                 break;
             }
             case SDL_WINDOWEVENT:
@@ -686,25 +652,6 @@ void process_events_game_over() {
     }
 }
 
-void process_events() {
-    switch (game_state) {
-        case STATE_MENU:
-            process_events_menu();
-            break;
-        case STATE_READY:
-            process_events_ready();
-            break;
-        case STATE_PLAY:
-            process_events_play();
-            break;
-        case STATE_GAME_OVER:
-            process_events_game_over();
-            break;
-        default:
-            break;
-    }
-}
-
 void update_menu(float dt) {
     logo_offset = sin(ticks / 200.0) * 10;
 
@@ -798,24 +745,6 @@ void update_game_over(float dt) {
 
 }
 
-void update(float dt) {
-    switch (game_state) {
-        case STATE_MENU:
-            update_menu(dt);
-            break;
-        case STATE_READY:
-            update_ready(dt);
-            break;
-        case STATE_PLAY:
-            update_play(dt);
-            break;
-        case STATE_GAME_OVER:
-            update_game_over(dt);
-            break;
-        default:
-            break;
-    }
-}
 
 void render_menu() {
     SDL_FRect rect;
@@ -946,20 +875,52 @@ void render_game_over() {
     SDL_RenderPresent(renderer);
 }
 
-void render() {
-    switch (game_state) {
+void go_to_state(game_state_t state) {
+    game_state = state;
+
+    printf("changing state to %d\n", state);
+
+    switch (state) {
         case STATE_MENU:
-            render_menu();
+            process_events = process_events_menu;
+            update = update_menu;
+            render = render_menu;
+            reset();
             break;
         case STATE_READY:
-            render_ready();
+            process_events = process_events_ready;
+            update = update_ready;
+            render = render_ready;
+            Mix_PlayChannel(-1, sfx_swooshing, 0);
             break;
         case STATE_PLAY:
-            render_play();
+            process_events = process_events_play;
+            update = update_play;
+            render = render_play;
+            reset();
+            jump();
             break;
-        case STATE_GAME_OVER:
-            render_game_over();
+        case STATE_GAME_OVER: {
+            process_events = process_events_game_over;
+            update = update_game_over;
+            render = render_game_over;
+
+            Mix_PlayChannel(-1, sfx_hit, 0);
+
+            if (score <= max_score) {
+                break;
+            }
+
+            new_max_score = 1;
+            max_score = score;
+
+            save_thread = SDL_CreateThread(save_file, "save_file", NULL);
+            if (!save_thread) {
+                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), window);
+            }
+            SDL_DetachThread(save_thread);
             break;
+        }
         default:
             break;
     }
@@ -970,7 +931,7 @@ void run() {
     uint64_t lastTicks = SDL_GetTicks64();
     uint64_t frames   = 0;
 
-    reset();
+    go_to_state(STATE_MENU);
 
     while (running) {
         ticks     = SDL_GetTicks64();
@@ -1083,32 +1044,6 @@ int main(int argc, char *argv[]) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", strerror(errno), window);
         return 1;
     }
-
-    // save_thread = SDL_CreateThread(save_file, "save_thread", NULL);
-    // if (!save_thread) {
-    //     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), window);
-    //     return 1;
-    // }
-
-    // save_mutex = SDL_CreateMutex();
-    // if (!save_mutex) {
-    //     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), window);
-    //     return 1;
-    // }
-
-    // save_cond = SDL_CreateCond();
-    // if (!save_mutex) {
-    //     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), window);
-    //     return 1;
-    // }
-
-    // printf("width = %d, height = %d\n", window_width, window_height);
-
-    // user_event_code = SDL_RegisterEvents(1);
-    // if (user_event_code == (Uint32)-1) {
-    //     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Error registering events", window);
-    //     return 1;
-    // }
 
     run();
 
