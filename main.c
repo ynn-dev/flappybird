@@ -14,22 +14,26 @@ const Uint32 WINDOW_FLAGS = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
 #define COLLISION_DETECTION  1
 #define DRAW_PLAYER_COLLIDER 0
 
-const SDL_Rect SPRITE_BACKGROUND   = { .x = 3,   .y = 0,   .w = 144, .h = 256 };
-const SDL_Rect SPRITE_GROUND       = { .x = 215, .y = 10,  .w = 12,  .h = 56  };
-const SDL_Rect SPRITE_LOGO         = { .x = 152, .y = 200, .w = 89,  .h = 24  };
-const SDL_Rect SPRITE_BUTTON_START = { .x = 212, .y = 230, .w = 40,  .h = 14  };
-const SDL_Rect SPRITE_BUTTON_OK    = { .x = 212, .y = 154, .w = 40,  .h = 14  };
-const SDL_Rect SPRITE_BUTTON_PAUSE = { .x = 261, .y = 174, .w = 13,  .h = 14  };
-const SDL_Rect SPRITE_BUTTON_PLAY  = { .x = 412, .y = 94,  .w = 13,  .h = 14  };
-const SDL_Rect SPRITE_GET_READY    = { .x = 254, .y = 71,  .w = 92,  .h = 25  };
-const SDL_Rect SPRITE_TAP          = { .x = 370, .y = 43,  .w = 57,  .h = 49  };
-const SDL_Rect SPRITE_GAME_OVER    = { .x = 152, .y = 173, .w = 96,  .h = 21  };
-const SDL_Rect SPRITE_BOARD        = { .x = 260, .y = 195, .w = 113, .h = 57  };
-const SDL_Rect SPRITE_NEW          = { .x = 214, .y = 126, .w = 16,  .h = 7   };
-const SDL_Rect SPRITE_PIPE         = { .x = 152, .y = 3,   .w = 26,  .h = 147 };
-const SDL_Rect SPRITE_PIPE_TOP     = { .x = 152, .y = 150, .w = 26,  .h = 13  };
-const SDL_Rect SPRITE_PIPE_BOTTOM  = { .x = 180, .y = 3,   .w = 26,  .h = 13  };
-const SDL_Rect SPRITE_PLAYERS[3]   = {
+const SDL_Rect SPRITE_BACKGROUND     = { .x = 3,   .y = 0,   .w = 144, .h = 256 };
+const SDL_Rect SPRITE_GROUND         = { .x = 215, .y = 10,  .w = 12,  .h = 56  };
+const SDL_Rect SPRITE_LOGO           = { .x = 152, .y = 200, .w = 89,  .h = 24  };
+const SDL_Rect SPRITE_BUTTON_START   = { .x = 212, .y = 230, .w = 40,  .h = 14  };
+const SDL_Rect SPRITE_BUTTON_OK      = { .x = 212, .y = 154, .w = 40,  .h = 14  };
+const SDL_Rect SPRITE_BUTTON_PAUSE   = { .x = 261, .y = 174, .w = 13,  .h = 14  };
+const SDL_Rect SPRITE_BUTTON_PLAY    = { .x = 412, .y = 94,  .w = 13,  .h = 14  };
+const SDL_Rect SPRITE_GET_READY      = { .x = 254, .y = 71,  .w = 92,  .h = 25  };
+const SDL_Rect SPRITE_TAP            = { .x = 370, .y = 43,  .w = 57,  .h = 49  };
+const SDL_Rect SPRITE_GAME_OVER      = { .x = 152, .y = 173, .w = 96,  .h = 21  };
+const SDL_Rect SPRITE_BOARD          = { .x = 260, .y = 195, .w = 113, .h = 57  };
+const SDL_Rect SPRITE_NEW            = { .x = 214, .y = 126, .w = 16,  .h = 7   };
+const SDL_Rect SPRITE_MEDAL_BRONZE   = { .x = 214, .y = 102, .w = 22,  .h = 22  };
+const SDL_Rect SPRITE_MEDAL_SILVER   = { .x = 214, .y = 78,  .w = 22,  .h = 22  };
+const SDL_Rect SPRITE_MEDAL_GOLD     = { .x = 214, .y = 154, .w = 22,  .h = 22  };
+const SDL_Rect SPRITE_MEDAL_PLATINUM = { .x = 384, .y = 130, .w = 22,  .h = 22  };
+const SDL_Rect SPRITE_PIPE           = { .x = 152, .y = 3,   .w = 26,  .h = 147 };
+const SDL_Rect SPRITE_PIPE_TOP       = { .x = 152, .y = 150, .w = 26,  .h = 13  };
+const SDL_Rect SPRITE_PIPE_BOTTOM    = { .x = 180, .y = 3,   .w = 26,  .h = 13  };
+const SDL_Rect SPRITE_PLAYERS[3]     = {
     { .x = 381, .y = 187, .w = 17, .h = 12  },
     { .x = 381, .y = 213, .w = 17, .h = 12  },
     { .x = 381, .y = 239, .w = 17, .h = 12  },
@@ -76,7 +80,7 @@ float window_height_ratio;
 
 const float player_y_initial = 100.0f;
 const float player_velocity_y_initial = 0.0f;
-const float GRAVITY = 3000.0f;
+const float GRAVITY = 3800.0f;
 const float jump_velocity_x = -1100.0f;
 const float pipe_velocity_x = -400.0f;
 
@@ -88,7 +92,7 @@ int sprite_height(const SDL_Rect *rect) {
     return rect->h * SPRITE_SCALE;
 }
 
-const float PIPE_GAP                = 400.0f;
+const float PIPE_GAP                = 380.0f;
 #define     PIPE_SPACING            (SPRITE_PIPE.w * SPRITE_SCALE * 3.0f)
 const float PIPE_GAP_PADDING_TOP    = 100.0f;
 const float PIPE_GAP_PADDING_BOTTOM = 100.0f;
@@ -120,6 +124,7 @@ void (*update)(float dt);
 void (*render)();
 
 int mouse_button_down = 0;
+SDL_FPoint mouse_pos;
 
 int menu_button_offset_y = 0;
 int game_over_button_offset_y = 0;
@@ -140,6 +145,7 @@ int new_max_score;
 float player_y;
 float player_velocity_y;
 const SDL_Rect *player_sprite;
+const SDL_Rect *medal_sprite;
 
 typedef struct pipe {
     float x;
@@ -268,9 +274,9 @@ void get_rect_menu_player(SDL_FRect *rect) {
     rect->h = sprite_height(player_sprite);
 }
 
-void get_rect_menu_button(SDL_FRect *rect) {
+void get_rect_menu_button(SDL_FRect *rect, int offset) {
     rect->x = (window_width / 2) - sprite_width(&SPRITE_BUTTON_START) / 2;
-    rect->y = (window_height / 4.0f) * 3.0f + menu_button_offset_y;
+    rect->y = (window_height / 4.0f) * 3.0f + offset;
     rect->w = sprite_width(&SPRITE_BUTTON_START);
     rect->h = sprite_height(&SPRITE_BUTTON_START);
 }
@@ -310,9 +316,9 @@ void get_rect_game_over_board(SDL_FRect *rect) {
     rect->h = sprite_height(&SPRITE_BOARD);
 }
 
-void get_rect_game_over_button(SDL_FRect *rect) {
+void get_rect_game_over_button(SDL_FRect *rect, int offset) {
     rect->x = (window_width / 2) - sprite_width(&SPRITE_BUTTON_OK) / 2;
-    rect->y = (window_height / 4.0f) * 3.0f + game_over_button_offset_y;
+    rect->y = (window_height / 4.0f) * 3.0f + offset;
     rect->w = sprite_width(&SPRITE_BUTTON_OK);
     rect->h = sprite_height(&SPRITE_BUTTON_OK);
 }
@@ -495,22 +501,43 @@ void draw_max_score_small(SDL_FRect *rect) {
     }
 
     if (new_max_score) {
-        rect->x = placement_x - 30 - sprite_width(&SPRITE_NEW);
-        rect->y = board_rect.y + 270;
+        rect->x = board_rect.x + 460;
+        rect->y = board_rect.y + 204;
         rect->w = sprite_width(&SPRITE_NEW);
         rect->h = sprite_height(&SPRITE_NEW);
         SDL_RenderCopyF(renderer, texture, &SPRITE_NEW, rect);
     }
 }
 
-int mouse_is_in_rect(const SDL_FRect *rect) {
+void draw_medal(SDL_FRect *rect) {
+    if (medal_sprite == NULL) {
+        return;
+    }
+
+    SDL_FRect board_rect;
+    get_rect_game_over_board(&board_rect);
+
+    rect->x = board_rect.x + 94;
+    rect->y = board_rect.y + 148;
+    rect->w = sprite_width(medal_sprite);
+    rect->h = sprite_height(medal_sprite);
+    SDL_RenderCopyF(renderer, texture, medal_sprite, rect);
+}
+
+void get_mouse_state() {
     int x, y;
-    SDL_GetMouseState(&x, &y);
-    SDL_FPoint point = {x * window_width_ratio, y * window_height_ratio};
-    return SDL_PointInFRect(&point, rect);
+    mouse_button_down = SDL_GetMouseState(&x, &y) & SDL_BUTTON_LMASK;
+    mouse_pos.x = x * window_width_ratio;
+    mouse_pos.y = y * window_height_ratio;
+}
+
+int mouse_is_in_rect(const SDL_FRect *rect) {
+    return SDL_PointInFRect(&mouse_pos, rect);
 }
 
 void process_events_menu() {
+    get_mouse_state();
+
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
             case SDL_QUIT:
@@ -534,7 +561,7 @@ void process_events_menu() {
                 break;
             case SDL_MOUSEBUTTONUP: {
                 SDL_FRect rect;
-                get_rect_menu_button(&rect);
+                get_rect_menu_button(&rect, 0);
                 if (mouse_is_in_rect(&rect)) {
                     go_to_state(STATE_READY);
                 }
@@ -547,11 +574,11 @@ void process_events_menu() {
                 break;
         }
     }
-
-    mouse_button_down = SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_LMASK;
 }
 
 void process_events_ready() {
+    get_mouse_state();
+
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
             case SDL_QUIT:
@@ -564,7 +591,7 @@ void process_events_ready() {
 
                 switch (event.key.keysym.sym) {
                     case SDLK_ESCAPE:
-                        go_to_state(STATE_MENU);
+                        running = 0;
                         break;
                     case SDLK_SPACE:
                         go_to_state(STATE_PLAY);
@@ -583,11 +610,11 @@ void process_events_ready() {
                 break;
         }
     }
-
-    mouse_button_down = SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_LMASK;
 }
 
 void process_events_play() {
+    get_mouse_state();
+
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
             case SDL_QUIT:
@@ -600,7 +627,7 @@ void process_events_play() {
 
                 switch (event.key.keysym.sym) {
                     case SDLK_ESCAPE:
-                        go_to_state(STATE_MENU);
+                        running = 0;
                         break;
                     case SDLK_SPACE:
                         jump();
@@ -617,7 +644,10 @@ void process_events_play() {
                     break;
                 }
 
-                jump();
+                if (!pause) {
+                    jump();
+                }
+
                 break;
             }
             case SDL_WINDOWEVENT:
@@ -627,11 +657,11 @@ void process_events_play() {
                 break;
         }
     }
-
-    mouse_button_down = SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_LMASK;
 }
 
 void process_events_game_over() {
+    get_mouse_state();
+
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
             case SDL_QUIT:
@@ -644,7 +674,7 @@ void process_events_game_over() {
 
                 switch (event.key.keysym.sym) {
                     case SDLK_ESCAPE:
-                        go_to_state(STATE_MENU);
+                        running = 0;
                         break;
                     case SDLK_SPACE:
                         go_to_state(STATE_MENU);
@@ -655,7 +685,7 @@ void process_events_game_over() {
                 break;
             case SDL_MOUSEBUTTONUP: {
                 SDL_FRect rect;
-                get_rect_game_over_button(&rect);
+                get_rect_game_over_button(&rect, 0);
                 if (mouse_is_in_rect(&rect)) {
                     go_to_state(STATE_MENU);
                 }
@@ -679,8 +709,6 @@ void process_events_game_over() {
                 break;
         }
     }
-
-    mouse_button_down = SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_LMASK;
 }
 
 void update_menu(float dt) {
@@ -691,7 +719,9 @@ void update_menu(float dt) {
     ground_offset += pipe_velocity_x * dt;
     ground_offset = fmodf(ground_offset, SPRITE_GROUND.w * SPRITE_SCALE);
 
-    menu_button_offset_y = mouse_button_down * 1 * SPRITE_SCALE;
+    SDL_FRect rect;
+    get_rect_menu_button(&rect, 0);
+    menu_button_offset_y = mouse_is_in_rect(&rect) * mouse_button_down * 1 * SPRITE_SCALE;
 }
 
 void update_ready(float dt) {
@@ -779,7 +809,9 @@ void update_play(float dt) {
 }
 
 void update_game_over(float dt) {
-    game_over_button_offset_y = mouse_button_down * 1 * SPRITE_SCALE;
+    SDL_FRect rect;
+    get_rect_game_over_button(&rect, 0);
+    game_over_button_offset_y = mouse_is_in_rect(&rect) * mouse_button_down * 1 * SPRITE_SCALE;
 }
 
 void render_menu() {
@@ -796,7 +828,7 @@ void render_menu() {
 
     draw_ground(&rect);
 
-    get_rect_menu_button(&rect);
+    get_rect_menu_button(&rect, menu_button_offset_y);
     SDL_RenderCopyF(renderer, texture, &SPRITE_BUTTON_START, &rect);
 
     SDL_RenderPresent(renderer);
@@ -908,8 +940,9 @@ void render_game_over() {
 
     draw_score_small(&rect);
     draw_max_score_small(&rect);
+    draw_medal(&rect);
 
-    get_rect_game_over_button(&rect);
+    get_rect_game_over_button(&rect, game_over_button_offset_y);
     SDL_RenderCopyF(renderer, texture, &SPRITE_BUTTON_OK, &rect);
 
     SDL_RenderPresent(renderer);
@@ -946,6 +979,18 @@ void go_to_state(game_state_t state) {
             render = render_game_over;
 
             Mix_PlayChannel(-1, sfx_hit, 0);
+
+            if (score >= 40) {
+                medal_sprite = &SPRITE_MEDAL_PLATINUM;
+            } else if (score >= 20) {
+                medal_sprite = &SPRITE_MEDAL_GOLD;
+            } else if (score >= 10) {
+                medal_sprite = &SPRITE_MEDAL_SILVER;
+            } else if (score >= 10) {
+                medal_sprite = &SPRITE_MEDAL_BRONZE;
+            } else {
+                medal_sprite = NULL;
+            }
 
             if (score <= max_score) {
                 break;
