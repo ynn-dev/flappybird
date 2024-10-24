@@ -65,8 +65,15 @@ const float SPRITE_SCALE = 7.0f;
 
 #define PLAYER_X (window_width / 5)
 
-const int   window_width_initial = 1170 * 0.5;
-const int   window_height_initial = 2532 * 0.5;
+const int   WINDOW_WIDTH_INITIAL = 1170 * 0.5;
+const int   WINDOW_HEIGHT_INITIAL = 2532 * 0.5;
+
+int window_width_real;
+int window_height_real;
+
+float window_width_ratio;
+float window_height_ratio;
+
 const float player_y_initial = 100.0f;
 const float player_velocity_y_initial = 0.0f;
 const float GRAVITY = 3000.0f;
@@ -102,7 +109,7 @@ typedef enum game_state_t {
     STATE_MENU      = 0,
     STATE_READY     = 1,
     STATE_PLAY      = 2,
-    STATE_GAME_OVER = 4,
+    STATE_GAME_OVER = 3,
 } game_state_t;
 
 game_state_t game_state;
@@ -111,6 +118,11 @@ void go_to_state(game_state_t state);
 void (*process_events)();
 void (*update)(float dt);
 void (*render)();
+
+int mouse_button_down = 0;
+
+int menu_button_offset_y = 0;
+int game_over_button_offset_y = 0;
 
 float logo_offset   = 0; // menu
 float ground_offset = 0; // menu, state, play
@@ -258,7 +270,7 @@ void get_rect_menu_player(SDL_FRect *rect) {
 
 void get_rect_menu_button(SDL_FRect *rect) {
     rect->x = (window_width / 2) - sprite_width(&SPRITE_BUTTON_START) / 2;
-    rect->y = (window_height / 4.0f) * 3.0f;
+    rect->y = (window_height / 4.0f) * 3.0f + menu_button_offset_y;
     rect->w = sprite_width(&SPRITE_BUTTON_START);
     rect->h = sprite_height(&SPRITE_BUTTON_START);
 }
@@ -300,7 +312,7 @@ void get_rect_game_over_board(SDL_FRect *rect) {
 
 void get_rect_game_over_button(SDL_FRect *rect) {
     rect->x = (window_width / 2) - sprite_width(&SPRITE_BUTTON_OK) / 2;
-    rect->y = (window_height / 4.0f) * 3.0f;
+    rect->y = (window_height / 4.0f) * 3.0f + game_over_button_offset_y;
     rect->w = sprite_width(&SPRITE_BUTTON_OK);
     rect->h = sprite_height(&SPRITE_BUTTON_OK);
 }
@@ -491,6 +503,13 @@ void draw_max_score_small(SDL_FRect *rect) {
     }
 }
 
+int mouse_is_in_rect(const SDL_FRect *rect) {
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+    SDL_FPoint point = {x * window_width_ratio, y * window_height_ratio};
+    return SDL_PointInFRect(&point, rect);
+}
+
 void process_events_menu() {
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -513,17 +532,10 @@ void process_events_menu() {
                         break;
                 }
                 break;
-            case SDL_MOUSEBUTTONDOWN: {
-                int x, y;
-                SDL_GetMouseState(&x, &y);
-                SDL_FPoint point = {x, y};
-                point.x *= 2; // TODO: depends on retina
-                point.y *= 2; // TODO: depends on retina
-                printf("x = %f, y = %f\n", point.x, point.y);
+            case SDL_MOUSEBUTTONUP: {
                 SDL_FRect rect;
                 get_rect_menu_button(&rect);
-                printf("x = %f, y = %f, w = %f, h = %f\n", rect.x, rect.y, rect.w, rect.h);
-                if (SDL_PointInFRect(&point, &rect)) {
+                if (mouse_is_in_rect(&rect)) {
                     go_to_state(STATE_READY);
                 }
                 break;
@@ -535,6 +547,8 @@ void process_events_menu() {
                 break;
         }
     }
+
+    mouse_button_down = SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_LMASK;
 }
 
 void process_events_ready() {
@@ -569,6 +583,8 @@ void process_events_ready() {
                 break;
         }
     }
+
+    mouse_button_down = SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_LMASK;
 }
 
 void process_events_play() {
@@ -594,16 +610,9 @@ void process_events_play() {
                 }
                 break;
             case SDL_MOUSEBUTTONDOWN: {
-                int x, y;
-                SDL_GetMouseState(&x, &y);
-                SDL_FPoint point = {x, y};
-                point.x *= 2; // TODO: depends on retina
-                point.y *= 2; // TODO: depends on retina
-                printf("x = %f, y = %f\n", point.x, point.y);
                 SDL_FRect rect;
                 get_rect_play_pause(&rect);
-                printf("x = %f, y = %f, w = %f, h = %f\n", rect.x, rect.y, rect.w, rect.h);
-                if (SDL_PointInFRect(&point, &rect)) {
+                if (mouse_is_in_rect(&rect)) {
                     pause = !pause;
                     break;
                 }
@@ -618,6 +627,8 @@ void process_events_play() {
                 break;
         }
     }
+
+    mouse_button_down = SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_LMASK;
 }
 
 void process_events_game_over() {
@@ -642,9 +653,14 @@ void process_events_game_over() {
                         break;
                 }
                 break;
-            case SDL_MOUSEBUTTONDOWN:
-                go_to_state(STATE_MENU);
+            case SDL_MOUSEBUTTONUP: {
+                SDL_FRect rect;
+                get_rect_game_over_button(&rect);
+                if (mouse_is_in_rect(&rect)) {
+                    go_to_state(STATE_MENU);
+                }
                 break;
+            }
             case SDL_WINDOWEVENT:
                 SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
                 break;
@@ -663,6 +679,8 @@ void process_events_game_over() {
                 break;
         }
     }
+
+    mouse_button_down = SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_LMASK;
 }
 
 void update_menu(float dt) {
@@ -672,6 +690,8 @@ void update_menu(float dt) {
 
     ground_offset += pipe_velocity_x * dt;
     ground_offset = fmodf(ground_offset, SPRITE_GROUND.w * SPRITE_SCALE);
+
+    menu_button_offset_y = mouse_button_down * 1 * SPRITE_SCALE;
 }
 
 void update_ready(float dt) {
@@ -758,7 +778,9 @@ void update_play(float dt) {
     }
 }
 
-void update_game_over(float dt) {}
+void update_game_over(float dt) {
+    game_over_button_offset_y = mouse_button_down * 1 * SPRITE_SCALE;
+}
 
 void render_menu() {
     SDL_FRect rect;
@@ -990,12 +1012,15 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    window = SDL_CreateWindow("Flappy Bird", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_width_initial, window_height_initial, WINDOW_FLAGS);
+    window = SDL_CreateWindow("Flappy Bird", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH_INITIAL, WINDOW_HEIGHT_INITIAL, WINDOW_FLAGS);
     if (!window) {
         snprintf(errstr, errlen, "Error creating window: %s", SDL_GetError());
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
         return 1;
     }
+
+    SDL_GetWindowSize(window, &window_width_real, &window_height_real);
+    printf("window_width_real = %d, window_height_real = %d\n", window_width_real, window_height_real);
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!renderer) {
@@ -1009,6 +1034,10 @@ int main(int argc, char *argv[]) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
         return 1;
     }
+    printf("window_width = %d, window_height = %d\n", window_width, window_height);
+
+    window_width_ratio = (float)window_width / (float)window_width_real;
+    window_height_ratio = (float)window_height / (float)window_height_real;
 
     texture = IMG_LoadTexture(renderer, "spritesheet.png");
     if (!texture) {
