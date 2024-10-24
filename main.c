@@ -143,21 +143,20 @@ SDL_Thread *save_thread;
 SDL_mutex *save_mutex;
 SDL_cond *save_cond;
 
-const char *SAVE_FILE = "data.txt";
+const size_t save_file_path_len = 256;
+char save_file_path[save_file_path_len];
 
-int load_save_file() {
-    FILE* f = fopen(SAVE_FILE, "r");
+int load_file() {
+    FILE* f = fopen(save_file_path, "r");
     if (!f) {
         if (errno == ENOENT) {
             printf("save file doesn't exist, max_score = 0\n");
-            fclose(f);
             // File doesn't exist, that's ok
             return 0;
         }
 
         // TODO: report error using SDL_PushEvents
         perror("load: failed to open file");
-        fclose(f);
         return 1;
     }
 
@@ -182,12 +181,12 @@ typedef enum user_codes_t {
     USER_CODE_SAVE_ERROR   = 1,
 } user_codes_t;
 
-int save_save_file(void *data) {
+int save_file(void *data) {
     SDL_Event event;
 
     event.type = SDL_USEREVENT;
 
-    FILE* f = fopen(SAVE_FILE, "w+");
+    FILE* f = fopen(save_file_path, "w+");
     if (!f) {
         event.user.code = USER_CODE_SAVE_ERROR;
         event.user.data1 = (void *)save_file_err;
@@ -253,7 +252,7 @@ void go_to_state(game_state_t state) {
             new_max_score = 1;
             max_score = score;
 
-            save_thread = SDL_CreateThread(save_save_file, "save_save_file", NULL);
+            save_thread = SDL_CreateThread(save_file, "save_file", NULL);
             if (!save_thread) {
                 SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), window);
             }
@@ -993,6 +992,12 @@ int main(int argc, char *argv[]) {
     const size_t errlen = 128;
     char errstr[errlen];
 
+#if defined(__IPHONEOS__)
+    snprintf(save_file_path, save_file_path_len, "%s/Documents/data.txt", getenv("HOME"));
+#else
+    snprintf(save_file_path, save_file_path_len, "data.txt");
+#endif
+
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
         snprintf(errstr, errlen, "Error initialising SDL: %s", SDL_GetError());
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
@@ -1074,12 +1079,12 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if (load_save_file() != 0) {
+    if (load_file() != 0) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", strerror(errno), window);
         return 1;
     }
 
-    // save_thread = SDL_CreateThread(save_save_file, "save_thread", NULL);
+    // save_thread = SDL_CreateThread(save_file, "save_thread", NULL);
     // if (!save_thread) {
     //     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), window);
     //     return 1;
