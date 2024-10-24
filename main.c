@@ -228,8 +228,6 @@ void jump() {
     player_velocity_y = jump_velocity_x;
 }
 
-
-
 int get_gap_y() {
     int min_y = ((window_height) - (window_height / 8.0f)) / 2 - PIPE_GAP / 2 - 400;
     int max_y = ((window_height) - (window_height / 8.0f)) / 2 - PIPE_GAP / 2 + 400;
@@ -595,9 +593,24 @@ void process_events_play() {
                         break;
                 }
                 break;
-            case SDL_MOUSEBUTTONDOWN:
+            case SDL_MOUSEBUTTONDOWN: {
+                int x, y;
+                SDL_GetMouseState(&x, &y);
+                SDL_FPoint point = {x, y};
+                point.x *= 2; // TODO: depends on retina
+                point.y *= 2; // TODO: depends on retina
+                printf("x = %f, y = %f\n", point.x, point.y);
+                SDL_FRect rect;
+                get_rect_play_pause(&rect);
+                printf("x = %f, y = %f, w = %f, h = %f\n", rect.x, rect.y, rect.w, rect.h);
+                if (SDL_PointInFRect(&point, &rect)) {
+                    pause = !pause;
+                    break;
+                }
+
                 jump();
                 break;
+            }
             case SDL_WINDOWEVENT:
                 SDL_GetRendererOutputSize(renderer, &window_width, &window_height);
                 break;
@@ -671,6 +684,10 @@ void update_ready(float dt) {
 }
 
 void update_play(float dt) {
+    if (pause) {
+        return;
+    }
+
     ground_offset += pipe_velocity_x * dt;
     ground_offset = fmodf(ground_offset, SPRITE_GROUND.w * SPRITE_SCALE);
 
@@ -741,10 +758,7 @@ void update_play(float dt) {
     }
 }
 
-void update_game_over(float dt) {
-
-}
-
+void update_game_over(float dt) {}
 
 void render_menu() {
     SDL_FRect rect;
@@ -820,7 +834,11 @@ void render_play() {
     SDL_RenderCopyF(renderer, texture, player_sprite, &rect);
 
     get_rect_play_pause(&rect);
-    SDL_RenderCopyF(renderer, texture, &SPRITE_BUTTON_PAUSE, &rect);
+    if (pause) {
+        SDL_RenderCopyF(renderer, texture, &SPRITE_BUTTON_PLAY, &rect);
+    } else {
+        SDL_RenderCopyF(renderer, texture, &SPRITE_BUTTON_PAUSE, &rect);
+    }
 
     draw_score(&rect);
 
@@ -927,9 +945,8 @@ void go_to_state(game_state_t state) {
 }
 
 void run() {
-    running           = 1;
+    running            = 1;
     uint64_t lastTicks = SDL_GetTicks64();
-    uint64_t frames   = 0;
 
     go_to_state(STATE_MENU);
 
@@ -941,11 +958,7 @@ void run() {
         process_events();
         update(dt);
         render();
-
-        frames++;
     }
-
-    // printf("ticks = %llu, frames = %llu", SDL_GetTicks64(), frames);
 }
 
 int main(int argc, char *argv[]) {
