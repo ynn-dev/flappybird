@@ -19,7 +19,7 @@
 		FA2B5FA22CC86E5E0060DA75 /* SDL2_image.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FA2B5F942CC86E300060DA75 /* SDL2_image.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		FA2B5FA32CC86E600060DA75 /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA2B5F752CC86E1E0060DA75 /* SDL2.framework */; };
 		FA2B5FA42CC86E600060DA75 /* SDL2.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FA2B5F752CC86E1E0060DA75 /* SDL2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		FA9C8B322CC7E2EE00B46CC7 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = FA9C8B312CC7E2EE00B46CC7 /* main.c */; };
+		FAC6B8B32CCB90D700E85E01 /* flappybird.c in Sources */ = {isa = PBXBuildFile; fileRef = FAC6B8B22CCB90D700E85E01 /* flappybird.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -73,7 +73,7 @@
 		FA2B5F622CC86E1D0060DA75 /* SDL.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SDL.xcodeproj; path = /Users/alex/development/flappybird/deps/SDL/Xcode/SDL/SDL.xcodeproj; sourceTree = "<absolute>"; };
 		FA2B5F882CC86E300060DA75 /* SDL_image.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SDL_image.xcodeproj; path = /Users/alex/development/flappybird/deps/SDL_image/Xcode/SDL_image.xcodeproj; sourceTree = "<absolute>"; };
 		FA9C8AE42CC7E07800B46CC7 /* FlappyBird.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FlappyBird.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		FA9C8B312CC7E2EE00B46CC7 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = main.c; path = ../../main.c; sourceTree = "<group>"; };
+		FAC6B8B22CCB90D700E85E01 /* flappybird.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = flappybird.c; path = /Users/alex/development/flappybird/flappybird.c; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -125,6 +125,7 @@
 		FA9C8ADB2CC7E07800B46CC7 = {
 			isa = PBXGroup;
 			children = (
+				FAC6B8B22CCB90D700E85E01 /* flappybird.c */,
 				FA2B5F622CC86E1D0060DA75 /* SDL.xcodeproj */,
 				FA2B5F882CC86E300060DA75 /* SDL_image.xcodeproj */,
 				FA2B5F442CC865C30060DA75 /* SDL_mixer.xcodeproj */,
@@ -134,7 +135,6 @@
 				FA2B5F3D2CC861330060DA75 /* sfx_swooshing.wav */,
 				FA2B5F3E2CC861330060DA75 /* sfx_wing.wav */,
 				FA2B5F2E2CC81D0C0060DA75 /* spritesheet.png */,
-				FA9C8B312CC7E2EE00B46CC7 /* main.c */,
 				FA9C8AE62CC7E07800B46CC7 /* FlappyBird */,
 				FA9C8B282CC7E1B500B46CC7 /* Frameworks */,
 				FA9C8AE52CC7E07800B46CC7 /* Products */,
@@ -274,7 +274,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FA9C8B322CC7E2EE00B46CC7 /* main.c in Sources */,
+				FAC6B8B32CCB90D700E85E01 /* flappybird.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

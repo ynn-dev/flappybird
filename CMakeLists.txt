@@ -10,7 +10,7 @@ set(SDL2MIXER_OPUS OFF)
 add_subdirectory(deps/SDL_mixer)
 
 # Create your game executable target as usual
-add_executable(flappybird main.c)
+add_executable(flappybird flappybird.c)
 
 set_property(TARGET flappybird PROPERTY COMPILE_WARNING_AS_ERROR ON)
 
