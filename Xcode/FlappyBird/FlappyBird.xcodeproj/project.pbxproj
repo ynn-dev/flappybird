@@ -72,7 +72,7 @@
 		FA2B5F442CC865C30060DA75 /* SDL_mixer.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SDL_mixer.xcodeproj; path = /Users/alex/development/flappybird/deps/SDL_mixer/Xcode/SDL_mixer.xcodeproj; sourceTree = "<absolute>"; };
 		FA2B5F622CC86E1D0060DA75 /* SDL.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SDL.xcodeproj; path = /Users/alex/development/flappybird/deps/SDL/Xcode/SDL/SDL.xcodeproj; sourceTree = "<absolute>"; };
 		FA2B5F882CC86E300060DA75 /* SDL_image.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SDL_image.xcodeproj; path = /Users/alex/development/flappybird/deps/SDL_image/Xcode/SDL_image.xcodeproj; sourceTree = "<absolute>"; };
-		FA9C8AE42CC7E07800B46CC7 /* FlappyBird.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FlappyBird.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FA9C8AE42CC7E07800B46CC7 /* Flappy Bird.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Flappy Bird.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FAC6B8B22CCB90D700E85E01 /* flappybird.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = flappybird.c; path = /Users/alex/development/flappybird/flappybird.c; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
@@ -144,7 +144,7 @@
 		FA9C8AE52CC7E07800B46CC7 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				FA9C8AE42CC7E07800B46CC7 /* FlappyBird.app */,
+				FA9C8AE42CC7E07800B46CC7 /* Flappy Bird.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -179,7 +179,7 @@
 			packageProductDependencies = (
 			);
 			productName = FlappyBird;
-			productReference = FA9C8AE42CC7E07800B46CC7 /* FlappyBird.app */;
+			productReference = FA9C8AE42CC7E07800B46CC7 /* Flappy Bird.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -424,7 +424,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.alxyng.FlappyBird;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Flappy Bird";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -457,7 +457,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.alxyng.FlappyBird;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Flappy Bird";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
