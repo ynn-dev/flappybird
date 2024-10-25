@@ -148,6 +148,13 @@ int       pipe_to_pass = 0;
 
 int pause = 0;
 
+float game_over_flash_alpha;
+
+float clamp(float val, float min, float max) {
+    const float t = val < min ? min : val;
+    return t > max ? max : t;
+}
+
 int get_sprite_width(const SDL_Rect *rect) {
     return rect->w * Sprite_Scale;
 }
@@ -822,6 +829,7 @@ void update_game_over(float dt) {
     SDL_FRect rect;
     get_rect_game_over_button(&rect, 0);
     game_over_button_offset_y = mouse_is_in_rect(&rect) * mouse_button_down * 1 * Sprite_Scale;
+    game_over_flash_alpha = clamp(game_over_flash_alpha -= dt * 500, 0, 255);
 }
 
 void render_menu() {
@@ -898,11 +906,7 @@ void render_play() {
     SDL_RenderCopyF(renderer, texture, player_sprite, &rect);
 
     get_rect_play_pause(&rect);
-    if (pause) {
-        SDL_RenderCopyF(renderer, texture, &Sprite_Button_Play, &rect);
-    } else {
-        SDL_RenderCopyF(renderer, texture, &Sprite_Button_Pause, &rect);
-    }
+    SDL_RenderCopyF(renderer, texture, pause ? &Sprite_Button_Play : &Sprite_Button_Pause, &rect);
 
     draw_score(&rect);
 
@@ -955,6 +959,14 @@ void render_game_over() {
     get_rect_game_over_button(&rect, game_over_button_offset_y);
     SDL_RenderCopyF(renderer, texture, &Sprite_Button_OK, &rect);
 
+    rect.x = 0;
+    rect.y = 0;
+    rect.w = window_width;
+    rect.h = window_height;
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, game_over_flash_alpha);
+    SDL_RenderFillRectF(renderer, &rect);
+
     SDL_RenderPresent(renderer);
 }
 
@@ -1001,6 +1013,8 @@ void go_to_state(game_state_t state) {
                 medal_sprite = NULL;
             }
 
+            game_over_flash_alpha = 255;
+
             if (score <= max_score) {
                 break;
             }
@@ -1013,6 +1027,7 @@ void go_to_state(game_state_t state) {
                 SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), window);
             }
             SDL_DetachThread(save_thread);
+
             break;
         }
         default:
@@ -1037,6 +1052,19 @@ void run() {
     }
 }
 
+void show_error(const char* fmt, ...) {
+    const size_t errlen = 128;
+    char         errstr[errlen];
+
+    va_list args;
+    va_start(args, fmt);
+
+    vsnprintf(errstr, errlen, fmt, args);
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
+
+    va_end(args);
+}
+
 int main(int argc, char *argv[]) {
     srand(time(NULL));
     const size_t errlen = 128;
@@ -1049,27 +1077,23 @@ int main(int argc, char *argv[]) {
 #endif
 
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-        snprintf(errstr, errlen, "Error initialising SDL: %s", SDL_GetError());
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
+        show_error("Error initialising SDL: %s", SDL_GetError());
         return 1;
     }
 
     if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
-        snprintf(errstr, errlen, "Error initialising SDL_image: %s", IMG_GetError());
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
+        show_error("Error initialising SDL_image: %s", IMG_GetError());
         return 1;
     }
 
     if (Mix_Init(0) != 0) {
-        snprintf(errstr, errlen, "Error initialising SDL_mixer: %s", Mix_GetError());
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
+        show_error("Error initialising SDL_mixer: %s", Mix_GetError());
         return 1;
     }
 
     window = SDL_CreateWindow("Flappy Bird", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, Window_Width_Initial, Window_Height_Initial, Window_Flags);
     if (!window) {
-        snprintf(errstr, errlen, "Error creating window: %s", SDL_GetError());
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
+        show_error("Error creating window: %s", SDL_GetError());
         return 1;
     }
 
@@ -1077,14 +1101,17 @@ int main(int argc, char *argv[]) {
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!renderer) {
-        snprintf(errstr, errlen, "Error creating renderer: %s", SDL_GetError());
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
+        show_error("Error creating renderer: %s", SDL_GetError());
         return 1;
     }
 
+    if (SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND) < 0) {
+        show_error("Error setting renderer blend mode: %s", SDL_GetError());
+        return 1;
+    };
+
     if (SDL_GetRendererOutputSize(renderer, &window_width, &window_height) != 0) {
-        snprintf(errstr, errlen, "Error getting renderer output size: %s", SDL_GetError());
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
+        show_error("Error getting renderer output size: %s", SDL_GetError());
         return 1;
     }
 
@@ -1093,49 +1120,47 @@ int main(int argc, char *argv[]) {
 
     texture = IMG_LoadTexture(renderer, "spritesheet.png");
     if (!texture) {
-        snprintf(errstr, errlen, "Error loading sprite sheet: %s", IMG_GetError());
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
+        show_error("Error loading sprite sheet: %s", IMG_GetError());
         return 1;
     }
 
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) != 0) {
-        snprintf(errstr, errlen, "Error opening audio device: %s", Mix_GetError());
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", errstr, window);
+        show_error("Error opening audio device: %s", Mix_GetError());
         return 1;
     }
 
     sfx_die = Mix_LoadWAV("sfx_die.wav");
     if (!(sfx_die)) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", Mix_GetError(), window);
+        show_error(Mix_GetError());
         return 1;
     }
 
     sfx_hit = Mix_LoadWAV("sfx_hit.wav");
     if (!sfx_hit) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", Mix_GetError(), window);
+        show_error(Mix_GetError());
         return 1;
     }
 
     sfx_point = Mix_LoadWAV("sfx_point.wav");
     if (!sfx_point) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", Mix_GetError(), window);
+        show_error(Mix_GetError());
         return 1;
     }
 
     sfx_swooshing = Mix_LoadWAV("sfx_swooshing.wav");
     if (!sfx_swooshing) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", Mix_GetError(), window);
+        show_error(Mix_GetError());
         return 1;
     }
 
     sfx_wing = Mix_LoadWAV("sfx_wing.wav");
     if (!sfx_wing) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", Mix_GetError(), window);
+        show_error(Mix_GetError());
         return 1;
     }
 
     if (load_file() != 0) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", strerror(errno), window);
+        show_error(strerror(errno));
         return 1;
     }
 

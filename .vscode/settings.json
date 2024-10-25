@@ -2,6 +2,8 @@
     "files.associations": {
         "sdl.h": "c",
         "begin_code.h": "c",
-        "ios": "c"
+        "ios": "c",
+        "__config": "c",
+        "algorithm": "c"
     }
 }
