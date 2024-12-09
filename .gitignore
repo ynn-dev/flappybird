@@ -2,3 +2,4 @@ build
 .DS_Store
 data.txt
 xcuserdata/
+CMakeUserPresets.json
